@@ -1,6 +1,6 @@
 "use client"
 
-import type React from "react"
+import react, { useState, useEffect, useRef} from "react"
 import Link from "next/link"
 import {
   Bell,
@@ -18,6 +18,54 @@ import {
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert"
+
+
+function DashboardAlerts() {
+  const [open, setOpent] = useState(false)
+   const [notifications, setNotifications] = useState([
+    { id: 1, title: "New order #1024", message: "2 items — $48.00", time: "2m ago", unread: true },
+    { id: 2, title: "Inventory low", message: "Item: Blue T-Shirt", time: "1h ago", unread: true },
+    { id: 3, title: "Weekly report ready", message: "Sales summary available", time: "1d ago", unread: false },
+   ])
+  
+  const ref = useRef<HTMLDivElement | null>(null)
+  
+  useEffect(() => {
+    function onDocClick(e: MouseEvent) { 
+      if (!ref.current) return
+      if (!ref.current.contains(e.target as Node)) setOpent(false)
+    }
+    
+    function onEsc(e: KeyboardEvent) {
+      if(e.key === 'Escape') setOpent(false)
+    }
+    
+    document.addEventListener('click', onDocClick)
+    document.addEventListener('keydown', onEsc)
+
+    return () => {
+      document.removeEventListener('click', onDocClick)
+      document.removeEventListener('keydown', onEsc)
+    }
+  }, [])
+  
+  function markAllRead() {
+    setNotifications((prev) =>prev.map(n => ({...n, unread:false})))
+  }
+
+  return (
+    <div className="relative">
+      <Button variant='ghost' size='icon' aria-expanded={open} aria-label="Notifications" onClick={() => setOpent((v) => !v)} className="relative">
+      
+      <Bell className="w-5 h-5 text-slate-600" />
+      {notifications.some(n => n.unread) && (
+        <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full" />
+        )}
+        </Button>
+    </div>
+  )
+}
 
 const navItems = [
   { name: "Dashboard", icon: LayoutDashboard, href: "/" },
