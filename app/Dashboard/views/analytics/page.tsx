@@ -1,9 +1,9 @@
-import { DashboardLayout } from "@/components/dashboard-layout"
+import { DashboardLayout } from "../../layout/Dasboard.layout"
 import { AnalyticsHeader } from "@/components/analytics-header"
-import { RevenueOrdersChart } from "@/components/revenue-orders-chart"
-import { TopProductsChart } from "@/components/top-products-chart"
-import { SalesByChannelChart } from "@/components/sales-by-channel-chart"
 import { LowTurnoverTable } from "@/components/low-turnover-table"
+import { RevenueOrdersChart } from "@/components/revenue-orders-chart"
+import { SalesByChannelChart } from "@/components/sales-by-channel-chart"
+import { TopProductsChart } from "@/components/top-products-chart"
 
 export default function AnalyticsPage() {
   return (

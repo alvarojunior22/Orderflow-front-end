@@ -1,6 +1,6 @@
 "use client"
 
-import { DashboardLayout } from "@/components/dashboard-layout"
+import { DashboardLayout } from "../../layout/Dasboard.layout"
 import { SettingsTabs } from "@/components/settings-tabs"
 
 export default function SettingsPage() {
