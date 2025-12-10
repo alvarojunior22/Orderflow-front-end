@@ -27,14 +27,12 @@ export default function LoginPage() {
     }
 
     try {
-      const res = await axios.post("/api/login", { username, password });
-      if (res.data.role === "admin") {
-        router.push("/Dashboard"); 
-      } else if (res.data.role === "customer") {
-        router.push("/dashboard"); // ruta general de cliente
+      const res = await axios.post("/api/login", { username, password }, { withCredentials: true });
+      
+      if (res.data.role === 'admin') {
+        router.push('/Dashboard')
       } else {
-        
-        router.push("/");
+        router.push('/')
       }
     } catch (err) {
       if (axios.isAxiosError(err)) {

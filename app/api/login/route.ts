@@ -1,10 +1,9 @@
+import { data } from "@/app/login/data/data.user";
 import { NextResponse } from "next/server";
-import { data } from "@/app/login/data/data.user"; 
 
 export async function POST(req: Request) {
   const { username, password } = await req.json();
 
-  
   const user = data.find(
     (u) => u.email === username || u.fullName === username
   );
