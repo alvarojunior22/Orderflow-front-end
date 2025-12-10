@@ -1,4 +1,4 @@
-import { DashboardLayout } from "@/components/dashboard-layout"
+import { DashboardLayout } from "../../layout/Dasboard.layout"
 import { OrdersHeader } from "@/components/orders-header"
 import { OrdersTable } from "@/components/orders-table"
 

@@ -1,6 +1,6 @@
-import { DashboardLayout } from "@/components/dashboard-layout"
-import { InventoryHeader } from "@/components/inventory-header"
+import { DashboardLayout } from "../../layout/Dasboard.layout"
 import { InventoryGrid } from "@/components/inventory-grid"
+import { InventoryHeader } from "@/components/inventory-header"
 
 export default function InventoryPage() {
   return (
