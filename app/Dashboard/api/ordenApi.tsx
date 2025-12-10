@@ -31,7 +31,7 @@ const ordersData = [
     amount: "$156.75",
     status: "processing" as const,
     timeAgo: "12 min ago",
-    isNew: false,
+    isNew: true,
   },
   {
     id: "ORD-2843",
@@ -39,7 +39,7 @@ const ordersData = [
     amount: "$92.50",
     status: "ready" as const,
     timeAgo: "18 min ago",
-    isNew: false,
+    isNew: true,
   },
 ]
 

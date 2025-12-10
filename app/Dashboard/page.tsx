@@ -2,10 +2,13 @@ import { DashboardLayout } from "./layout/Dasboard.layout"
 import { ServerOrdersFeed } from "./servers/serverOrder"
 import { KPICards } from "@/components/kpi-cards"
 import { QuickInsights } from "@/components/quick-insights"
+import { getNotifications } from "./api/ordenApi"
 
-export default function DashboardPage() {
+export default async function DashboardPage() {
+
+  const inicialnotifications = await getNotifications()
   return (
-    <DashboardLayout currentPage="Dashboard">
+    <DashboardLayout initialNotifications={inicialnotifications} >
       <div className="space-y-6">
         <KPICards />
 

@@ -1,8 +1,9 @@
-"use client"
+// DashboardLayout.tsx
+"use client";
 
-import React, { useState, useEffect, useRef } from "react"
-import Link from "next/link"
-import { useRouter } from "next/navigation"
+import React, { useRef, useState, useEffect } from "react";
+import Link from "next/link";
+import { useRouter, usePathname } from "next/navigation";
 import {
   Bell,
   HelpCircle,
@@ -16,44 +17,47 @@ import {
   Box,
   ChevronRight,
   LogOut,
-} from "lucide-react"
-import { Input } from "@/components/ui/input"
-import { Button } from "@/components/ui/button"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert"
-import { useNotifications } from "../hooks/useNotifications"
-import { Notification } from "../interfaces/interface-Notification"
+} from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
+import { useNotifications } from "../hooks/useNotifications";
+import { Notification } from "../interfaces/interface-Notification";
 
-interface DashboardLayoutProps {
-  children: React.ReactNode
-  currentPage?: string
-  
-}
+// --- Componente: NotificationCenter ---
 
-function NotificationCenter({ initialNotifications }: { initialNotifications: Notification[]  }) {
-  const [open, setOpen] = useState(false)
+function NotificationCenter({
+  initialNotifications,
+}: {
+  initialNotifications: Notification[];
+}) {
+  const [open, setOpen] = useState(false);
   const { notifications, unreadCount, markAsRead, markAllRead } =
-    useNotifications({ initialNotifications })
-  const ref = useRef<HTMLDivElement | null>(null)
+    useNotifications({ initialNotifications });
+  
+  const activeNotifications = notifications.filter(n => n.unread)
+  
+  const ref = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     function onDocClick(e: MouseEvent) {
-      if (!ref.current) return
-      if (!ref.current.contains(e.target as Node)) setOpen(false)
+      if (!ref.current) return;
+      if (!ref.current.contains(e.target as Node)) setOpen(false);
     }
 
     function onEsc(e: KeyboardEvent) {
-      if (e.key === "Escape") setOpen(false)
+      if (e.key === "Escape") setOpen(false);
     }
 
-    document.addEventListener("click", onDocClick)
-    document.addEventListener("keydown", onEsc)
+    document.addEventListener("click", onDocClick);
+    document.addEventListener("keydown", onEsc);
 
     return () => {
-      document.removeEventListener("click", onDocClick)
-      document.removeEventListener("keydown", onEsc)
-    }
-  }, [])
+      document.removeEventListener("click", onDocClick);
+      document.removeEventListener("keydown", onEsc);
+    };
+  }, []);
 
   return (
     <div className="relative" ref={ref}>
@@ -86,17 +90,19 @@ function NotificationCenter({ initialNotifications }: { initialNotifications: No
           </div>
 
           <div className="max-h-96 overflow-y-auto">
-            {notifications.length === 0 ? (
+            {activeNotifications.length === 0 ? (
               <div className="p-6 text-center text-sm text-slate-500">
                 No notifications
               </div>
             ) : (
               <div className="p-2 space-y-2">
-                {notifications.map((notification) => (
+                {activeNotifications.map((notification) => (
                   <Alert
                     key={notification.id}
                     className={`cursor-pointer transition-colors ${
-                      notification.unread ? "ring-1 ring-blue-50 bg-blue-50/30" : ""
+                      notification.unread
+                        ? "ring-1 ring-blue-50 bg-blue-50/30"
+                        : ""
                     }`}
                     onClick={() => markAsRead(notification.id)}
                   >
@@ -120,53 +126,52 @@ function NotificationCenter({ initialNotifications }: { initialNotifications: No
           </div>
 
           <div className="px-4 py-3 border-t border-slate-200 bg-slate-50">
-            <Link href="/dashboard/orders" className="text-sm text-blue-600 hover:text-blue-700 font-medium">
+            <Link
+              href="/Dashboard/views/orders"
+              className="text-sm text-blue-600 hover:text-blue-700 font-medium"
+            >
               View all orders →
             </Link>
           </div>
         </div>
       )}
     </div>
-  )
+  );
 }
+
+// --- Datos de Navegación ---
 
 const navItems = [
   { name: "Dashboard", icon: LayoutDashboard, href: "/Dashboard" },
   { name: "Live Orders", icon: ShoppingCart, href: "/Dashboard/views/orders" },
-  { name: "Inventory Catalog", icon: Package, href: "/Dashboard/views/inventory" },
+  {
+    name: "Inventory Catalog",
+    icon: Package,
+    href: "/Dashboard/views/inventory",
+  },
   { name: "Analytics", icon: BarChart3, href: "/Dashboard/views/analytics" },
   { name: "Settings", icon: Settings, href: "/Dashboard/views/settings" },
-]
+];
+
+// --- Definición de Props ---
+
+interface DashboardLayoutProps {
+  children: React.ReactNode;
+  initialNotifications: Notification[];
+}
+
+// --- Componente: DashboardLayout ---
 
 export function DashboardLayout({
   children,
-  currentPage = "Dashboard",
+  initialNotifications,
 }: DashboardLayoutProps) {
-  const router = useRouter()
-  const [notifications, setNotifications] = React.useState<Notification[]>([])
-  const [loading, setLoading] = React.useState(true)
-
-  // React.useEffect(() => {
-  //   // Carga notificaciones
-  //   const fetchNotifications = async () => {
-  //     try {
-  //       const response = await fetch("/api/notifications")
-  //       const data = await response.json()
-  //       setNotifications(data)
-  //     } catch (error) {
-  //       console.error("Error fetching notifications:", error)
-  //       setNotifications([])
-  //     } finally {
-  //       setLoading(false)
-  //     }
-  //   }
-
-  //   fetchNotifications()
-  // }, [])
+  const router = useRouter();
+  const pathname = usePathname();
 
   const handleLogout = () => {
-    router.push("/")
-  }
+    router.push("/");
+  };
 
   return (
     <div className="flex h-screen bg-slate-50">
@@ -179,7 +184,9 @@ export function DashboardLayout({
               <MessageSquare className="w-4 h-4 text-white" />
               <Box className="w-3 h-3 text-white -ml-2 -mb-1" />
             </div>
-            <span className="text-xl font-semibold text-slate-900">OrderFlow</span>
+            <span className="text-xl font-semibold text-slate-900">
+              OrderFlow
+            </span>
           </Link>
         </div>
 
@@ -187,7 +194,7 @@ export function DashboardLayout({
         <nav className="flex-1 p-4">
           <ul className="space-y-1">
             {navItems.map((item) => {
-              const isActive = item.name === currentPage
+              const isActive = pathname.startsWith(item.href);
               return (
                 <li key={item.name}>
                   <Link
@@ -202,7 +209,7 @@ export function DashboardLayout({
                     {item.name}
                   </Link>
                 </li>
-              )
+              );
             })}
           </ul>
         </nav>
@@ -251,9 +258,7 @@ export function DashboardLayout({
             </div>
 
             <div className="flex items-center gap-2 ml-4">
-              {!loading && (
-                <NotificationCenter initialNotifications={notifications} />
-              )}
+              <NotificationCenter initialNotifications={initialNotifications} />
               <Button variant="ghost" size="icon">
                 <HelpCircle className="w-5 h-5 text-slate-600" />
               </Button>
@@ -265,5 +270,5 @@ export function DashboardLayout({
         <main className="flex-1 overflow-y-auto p-6">{children}</main>
       </div>
     </div>
-  )
+  );
 }
