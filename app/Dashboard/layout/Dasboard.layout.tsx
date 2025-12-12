@@ -24,6 +24,9 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { useNotifications } from "../hooks/useNotifications";
 import { Notification } from "../interfaces/interface-Notification";
+import axios from "axios";
+
+
 
 // --- Componente: NotificationCenter ---
 
@@ -169,8 +172,14 @@ export function DashboardLayout({
   const router = useRouter();
   const pathname = usePathname();
 
-  const handleLogout = () => {
-    router.push("/");
+  const handleLogout = async () => {
+    try {
+      await axios.post('/api/logout')
+      router.push("/");
+    } catch (error) {
+      console.error('Logout Error',error)
+    }
+    
   };
 
   return (

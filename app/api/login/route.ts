@@ -28,11 +28,7 @@ export async function POST(req: Request) {
     path: "/",
   });
 
-  response.cookies.set("userRole", user.role, {
-    httpOnly: true,
-    maxAge: 60 * 60 * 24,
-    path: "/",
-  });
+  
 
   return response;
 }

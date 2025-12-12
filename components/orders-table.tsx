@@ -8,6 +8,12 @@ import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Eye, Trash2, Globe, Smartphone, ShoppingBag, ChevronDown, ChevronRight, MapPin, Phone } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { DateRange } from "react-day-picker";
+
+export interface OrdersFilters {
+  status: string;
+  dateRange: DateRange | undefined;
+}
 
 interface Order {
   id: string
@@ -127,7 +133,7 @@ const channelIcons = {
   pos: ShoppingBag,
 }
 
-export function OrdersTable() {
+export function OrdersTable({filters}: {filters: OrdersFilters}) {
   const [expandedRow, setExpandedRow] = useState<string | null>("ORD-2847")
   const [selectedOrders, setSelectedOrders] = useState<string[]>([])
   const [orders, setOrders] = useState<Order[]>(mockOrders)
@@ -139,7 +145,7 @@ export function OrdersTable() {
   const toggleSelectOrder = (orderId: string) => {
     setSelectedOrders((prev) => (prev.includes(orderId) ? prev.filter((id) => id !== orderId) : [...prev, orderId]))
   }
-
+  
   const toggleSelectAll = () => {
     if (selectedOrders.length === orders.length) {
       setSelectedOrders([])
@@ -147,6 +153,12 @@ export function OrdersTable() {
       setSelectedOrders(orders.map((order) => order.id))
     }
   }
+
+  const filteredOrders = orders.filter((order) => {
+    const statusMatch = filters.status || order.status == filters.status
+
+    return statusMatch
+  })
 
   return (
     <div className="space-y-4">
@@ -186,7 +198,7 @@ export function OrdersTable() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {orders.map((order) => {
+            {filteredOrders.map((order) => {
               const isExpanded = expandedRow === order.id
               const ChannelIcon = channelIcons[order.channel]
 
