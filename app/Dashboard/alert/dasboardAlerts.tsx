@@ -1,14 +1,12 @@
-
-
 "use client";
 
-import React, { useState, useEffect, useRef, useCallback } from "react";
-import Link from "next/link";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
 import { Bell } from "lucide-react";
-import { Button } from "@/components/ui/button"; 
-import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert"; 
+import Link from "next/link";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useNotifications } from "../hooks/useNotifications";
-import { Notification } from "../interfaces/interface-Notification";
+import { Notification } from "../interfaces/interface-Order";
 
 interface DashboardAlertsProps {
   initialNotifications: Notification[];
@@ -24,7 +22,6 @@ export function DashboardAlerts({
 
   const ref = useRef<HTMLDivElement | null>(null);
 
- 
   useEffect(() => {
     function onDocClick(e: MouseEvent) {
       if (!ref.current) return;
@@ -44,7 +41,6 @@ export function DashboardAlerts({
     };
   }, []);
 
-  
   const handleItemClick = useCallback(
     (id: string) => {
       markAsRead(id);

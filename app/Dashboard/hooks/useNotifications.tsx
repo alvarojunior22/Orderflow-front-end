@@ -1,10 +1,11 @@
-
-
 "use client";
 
-import { useState, useCallback, useMemo } from "react";
-import { Notification } from "../interfaces/interface-Notification";
-import { updateAllNotificationsRead, updateNotificationStatus } from "@/app/api/notifications/orderApi";
+import {
+  updateAllNotificationsRead,
+  updateNotificationStatus,
+} from "@/app/api/notifications/orderApi";
+import { useCallback, useMemo, useState } from "react";
+import { Notification } from "../interfaces/interface-Notifications";
 
 interface UseNotificationsProps {
   initialNotifications?: Notification[];

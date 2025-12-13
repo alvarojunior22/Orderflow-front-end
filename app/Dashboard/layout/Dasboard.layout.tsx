@@ -2,33 +2,30 @@
 
 "use client";
 
-import React, { useRef, useState, useEffect, useCallback } from "react";
-import Link from "next/link";
-import { useRouter, usePathname } from "next/navigation";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
-  Bell,
-  HelpCircle,
-  Search,
-  LayoutDashboard,
-  ShoppingCart,
-  Package,
   BarChart3,
-  Settings,
-  MessageSquare,
+  Bell,
   Box,
   ChevronRight,
+  HelpCircle,
+  LayoutDashboard,
   LogOut,
+  MessageSquare,
+  Package,
+  Search,
+  Settings,
+  ShoppingCart,
 } from "lucide-react";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
+import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useNotifications } from "../hooks/useNotifications";
-import { Notification } from "../interfaces/interface-Notification";
-// Reemplazar la llamada a axios.post con una función de API de cliente (buena práctica)
-// import axios from "axios";
+import { Notification } from "../interfaces/interface-Notifications";
 
-// --- Componente: NotificationCenter (Mejorado) ---
 
 function NotificationCenter({
   initialNotifications,
@@ -164,8 +161,6 @@ function NotificationCenter({
   );
 }
 
-
-
 const navItems = [
   { name: "Dashboard", icon: LayoutDashboard, href: "/Dashboard" },
   { name: "Live Orders", icon: ShoppingCart, href: "/Dashboard/views/orders" },
@@ -192,11 +187,14 @@ export function DashboardLayout({
   const router = useRouter();
   const pathname = usePathname();
 
-
-  const handleLogout = () => {
-    
-    console.log("Simulating Logout...");
-    router.push("/");
+  const handleLogout = async () => {
+    try {
+      await fetch("/api/logout", { method: "POST" });
+      router.push("/");
+    } catch (error) {
+      console.error('Error cookie not deleted', error)
+    }
+   
   };
 
   return (

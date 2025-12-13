@@ -1,51 +1,43 @@
-"use client"
+"use client";
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { MessageCircle } from "lucide-react"
-import { useState, useEffect } from "react"
-import { useNotifications } from "@/app/Dashboard/hooks/useNotifications"
-import { Notification } from "@/app/Dashboard/interfaces/interface-Notification"
+import { useEffect, useState } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { MessageCircle, Send } from "lucide-react";
+import { Order } from "@/app/Dashboard/interfaces/interface-Order";
+import { useLiveOrders } from "@/app/Dashboard/hooks/useLiveOrders";
 
-const statusConfig = {
-  processing: {
-    label: "Processing",
-    color: "bg-blue-100 text-blue-700 border-blue-200",
-  },
-  awaiting: {
-    label: "Awaiting Confirmation",
-    color: "bg-amber-100 text-amber-700 border-amber-200",
-  },
-  ready: {
-    label: "Ready for Pickup",
-    color: "bg-green-100 text-green-700 border-green-200",
-  },
+interface Props {
+  initialOrders?: Order[];
 }
 
-interface LiveOrdersFeedProps {
-  initialNotifications: Notification[]
-}
+const statusStyles: Record<Order["status"], string> = {
+  processing: "bg-blue-100 text-blue-700 border-blue-200",
+  awaiting: "bg-amber-100 text-amber-700 border-amber-200",
+  ready: "bg-green-100 text-green-700 border-green-200",
+  completed: "bg-emerald-100 text-emerald-700 border-emerald-200",
+  cancelled: "bg-red-100 text-red-700 border-red-200",
+};
 
-export function LiveOrdersFeed({ initialNotifications }: LiveOrdersFeedProps) {
-  const [pulse, setPulse] = useState(true)
-  const { notifications } = useNotifications({ initialNotifications })
+export function LiveOrdersFeed() {
+  const { orders } = useLiveOrders();
+  const [pulse, setPulse] = useState(true);
 
+  // efecto visual de "live"
   useEffect(() => {
-    const interval = setInterval(() => {
-      setPulse((p) => !p)
-    }, 2000)
-    return () => clearInterval(interval)
-  }, [])
+    const interval = setInterval(() => setPulse((p) => !p), 2000);
+    return () => clearInterval(interval);
+  }, []);
 
-  const orders = notifications.map((n) => ({
-    id: n.orderId,
-    customer: n.message.split(" — ")[0],
-    channel: "whatsapp" as const,
-    amount: n.message.split(" — ")[1] || "$0.00",
-    status: n.status,
-    timeAgo: n.time,
-    isNew: n.unread,
-  }))
+  if (!orders || orders.length === 0) {
+    return (
+      <Card>
+        <CardContent className="p-6 text-sm text-slate-500 text-center">
+          No orders received yet
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card className="border-slate-200">
@@ -54,10 +46,8 @@ export function LiveOrdersFeed({ initialNotifications }: LiveOrdersFeedProps) {
           <CardTitle className="text-lg font-semibold text-slate-900">
             Live Orders Feed
           </CardTitle>
-          <Badge
-            variant="secondary"
-            className="bg-green-100 text-green-700 border-green-200"
-          >
+
+          <Badge variant="secondary" className="bg-green-100 text-green-700">
             <span
               className={`w-2 h-2 rounded-full bg-green-500 mr-2 ${
                 pulse ? "animate-pulse" : ""
@@ -67,102 +57,81 @@ export function LiveOrdersFeed({ initialNotifications }: LiveOrdersFeedProps) {
           </Badge>
         </div>
       </CardHeader>
+
       <CardContent className="p-0">
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead className="bg-slate-50 border-b border-slate-200">
               <tr>
-                <th className="text-left text-xs font-semibold text-slate-600 px-6 py-3">
-                  Order ID
+                <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600">
+                  Order
                 </th>
-                <th className="text-left text-xs font-semibold text-slate-600 px-6 py-3">
+                <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600">
                   Customer
                 </th>
-                <th className="text-left text-xs font-semibold text-slate-600 px-6 py-3">
+                <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600">
                   Channel
                 </th>
-                <th className="text-left text-xs font-semibold text-slate-600 px-6 py-3">
+                <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600">
                   Amount
                 </th>
-                <th className="text-left text-xs font-semibold text-slate-600 px-6 py-3">
+                <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600">
                   Status
-                </th>
-                <th className="text-left text-xs font-semibold text-slate-600 px-6 py-3">
-                  Time
                 </th>
               </tr>
             </thead>
+
             <tbody className="divide-y divide-slate-200">
-              {orders.length === 0 ? (
-                <tr>
-                  <td
-                    colSpan={6}
-                    className="px-6 py-8 text-center text-sm text-slate-500"
-                  >
-                    No orders yet
+              {orders.map((order) => (
+                <tr
+                  key={order.id}
+                  className="hover:bg-slate-50 transition-colors"
+                >
+                  <td className="px-6 py-4 font-medium text-blue-600">
+                    {order.id}
+                  </td>
+
+                  <td className="px-6 py-4 text-slate-900">{order.customer}</td>
+
+                  <td className="px-6 py-4">
+                    <div className="flex items-center gap-2">
+                      <div
+                        className={`w-8 h-8 rounded-lg flex items-center justify-center ${
+                          order.channel === "telegram"
+                            ? "bg-blue-100"
+                            : "bg-green-100"
+                        }`}
+                      >
+                        {order.channel === "telegram" ? (
+                          <Send className="w-4 h-4 text-blue-600" />
+                        ) : (
+                          <MessageCircle className="w-4 h-4 text-green-600" />
+                        )}
+                      </div>
+                      <span className="capitalize text-sm text-slate-600">
+                        {order.channel}
+                      </span>
+                    </div>
+                  </td>
+
+                  <td className="px-6 py-4 font-semibold text-slate-900">
+                    ${order.amount.toFixed(2)}
+                  </td>
+
+                  <td className="px-6 py-4">
+                    <Badge
+                      variant="outline"
+                      className={statusStyles[order.status]}
+                    >
+                      {order.status}
+                    </Badge>
                   </td>
                 </tr>
-              ) : (
-                orders.map((order) => (
-                  <tr
-                    key={order.id}
-                    className={`hover:bg-slate-50 transition-colors ${
-                      order.isNew && pulse ? "bg-blue-50/50" : ""
-                    }`}
-                  >
-                    <td className="px-6 py-4">
-                      <button className="text-sm font-medium text-blue-600 hover:text-blue-700">
-                        {order.id}
-                      </button>
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className="text-sm text-slate-900">
-                        {order.customer}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-2">
-                        <div className="w-8 h-8 rounded-lg bg-green-100 flex items-center justify-center">
-                          <MessageCircle className="w-4 h-4 text-green-600" />
-                        </div>
-                        <span className="text-sm text-slate-600 capitalize">
-                          {order.channel}
-                        </span>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className="text-sm font-semibold text-slate-900">
-                        {order.amount}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4">
-                      <Badge
-                        variant="outline"
-                        className={
-                          statusConfig[
-                            order.status as keyof typeof statusConfig
-                          ].color
-                        }
-                      >
-                        {
-                          statusConfig[
-                            order.status as keyof typeof statusConfig
-                          ].label
-                        }
-                      </Badge>
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className="text-sm text-slate-500">
-                        {order.timeAgo}
-                      </span>
-                    </td>
-                  </tr>
-                ))
-              )}
+              ))}
             </tbody>
           </table>
         </div>
       </CardContent>
     </Card>
-  )
+  );
 }

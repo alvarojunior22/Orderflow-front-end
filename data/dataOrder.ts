@@ -1,6 +1,6 @@
 // src/data/mockOrders.ts
 
-import { Order } from "../app/Dashboard/interfaces/interface-Notification"; // Asegúrate de que esta ruta sea correcta
+import { Order } from "../app/Dashboard/interfaces/interface-Order"; // Asegúrate de que esta ruta sea correcta
 
 export const mockOrders: Order[] = [
   {
@@ -8,7 +8,7 @@ export const mockOrders: Order[] = [
     customer: "Elena Ramírez",
     channel: "whatsapp",
     amount: 72.5,
-    status: "awaiting",
+    status: "ready",
     createdAt: new Date("2025-12-12T17:20:00Z"),
     updatedAt: new Date("2025-12-12T17:20:00Z"),
   },
