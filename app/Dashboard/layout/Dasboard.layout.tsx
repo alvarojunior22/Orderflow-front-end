@@ -192,10 +192,9 @@ export function DashboardLayout({
   const router = useRouter();
   const pathname = usePathname();
 
-  // NOTA: handleLogout debería usar una función de API cliente dedicada para la desautenticación.
+
   const handleLogout = () => {
-    // Simulamos un logout, idealmente usando una función async de un archivo de API:
-    // try { await logoutUser(); router.push("/"); } catch (error) { ... }
+    
     console.log("Simulating Logout...");
     router.push("/");
   };
