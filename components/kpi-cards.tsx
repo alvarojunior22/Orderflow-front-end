@@ -1,76 +1,69 @@
-import { Card, CardContent } from "@/components/ui/card"
-import { DollarSign, ShoppingCart, MessageSquare, AlertTriangle, TrendingUp, TrendingDown } from "lucide-react"
+"use client";
 
-const kpis = [
-  {
-    title: "Today's Sales Revenue",
-    value: "$1,240.50",
-    trend: "+12%",
-    trendDirection: "up",
-    comparison: "from yesterday",
-    icon: DollarSign,
-    iconColor: "text-green-600",
-    iconBg: "bg-green-100",
-  },
-  {
-    title: "Active Orders",
-    value: "18",
-    trend: "+5",
-    trendDirection: "up",
-    comparison: "pending",
-    icon: ShoppingCart,
-    iconColor: "text-blue-600",
-    iconBg: "bg-blue-100",
-  },
-  {
-    title: "AI Conversations Today",
-    value: "145",
-    trend: "+23%",
-    trendDirection: "up",
-    comparison: "active chats",
-    icon: MessageSquare,
-    iconColor: "text-purple-600",
-    iconBg: "bg-purple-100",
-  },
-  {
-    title: "Low Stock Alerts",
-    value: "5",
-    trend: "-2",
-    trendDirection: "down",
-    comparison: "items critical",
-    icon: AlertTriangle,
-    iconColor: "text-amber-600",
-    iconBg: "bg-amber-100",
-  },
-]
+import { Card, CardContent } from "@/components/ui/card";
+import {
+  DollarSign,
+  ShoppingCart,
+  MessageSquare,
+  AlertTriangle,
+  
+} from "lucide-react";
+
+import { useOrderMetrics } from "@/app/Dashboard/hooks/useMetricsOrder";
+import { useLiveOrders } from "@/app/Dashboard/hooks/useLiveOrders";
 
 export function KPICards() {
+  const { orders, loading } = useLiveOrders();
+  const metrics = useOrderMetrics(orders);
+
+  if (loading) {
+    return <p className="text-slate-500">Loading metrics...</p>;
+  }
+
+  const kpis = [
+    {
+      title: "Today's Revenue",
+      value: `$${metrics.revenueToday.toFixed(2)}`,
+      icon: DollarSign,
+      color: "text-green-600 bg-green-100",
+    },
+    {
+      title: "Active Orders",
+      value: metrics.activeOrdersCount,
+      icon: ShoppingCart,
+      color: "text-blue-600 bg-blue-100",
+    },
+    {
+      title: "New Orders Today",
+      value: metrics.newOrdersCount,
+      icon: MessageSquare,
+      color: "text-purple-600 bg-purple-100",
+    },
+    {
+      title: "Alerts",
+      value: metrics.alertOrdersCount,
+      icon: AlertTriangle,
+      color: "text-amber-600 bg-amber-100",
+    },
+  ];
+
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
       {kpis.map((kpi) => (
-        <Card key={kpi.title} className="border-slate-200">
-          <CardContent className="p-6">
-            <div className="flex items-start justify-between">
-              <div className="flex-1">
-                <p className="text-sm font-medium text-slate-600 mb-2">{kpi.title}</p>
-                <p className="text-3xl font-bold text-slate-900 mb-2">{kpi.value}</p>
-                <div className="flex items-center gap-1.5 text-sm">
-                  {kpi.trendDirection === "up" ? (
-                    <TrendingUp className="w-4 h-4 text-green-600" />
-                  ) : (
-                    <TrendingDown className="w-4 h-4 text-green-600" />
-                  )}
-                  <span className="font-medium text-green-600">{kpi.trend}</span>
-                  <span className="text-slate-500">{kpi.comparison}</span>
-                </div>
-              </div>
-              <div className={`w-12 h-12 rounded-lg ${kpi.iconBg} flex items-center justify-center shrink-0`}>
-                <kpi.icon className={`w-6 h-6 ${kpi.iconColor}`} />
-              </div>
+        <Card key={kpi.title}>
+          <CardContent className="p-6 flex justify-between items-start">
+            <div>
+              <p className="text-sm text-slate-500">{kpi.title}</p>
+              <p className="text-3xl font-bold">{kpi.value}</p>
+            </div>
+            <div
+              className={`w-12 h-12 rounded-lg flex items-center justify-center ${kpi.color}`}
+            >
+              <kpi.icon className="w-6 h-6" />
             </div>
           </CardContent>
         </Card>
       ))}
     </div>
-  )
+  );
 }

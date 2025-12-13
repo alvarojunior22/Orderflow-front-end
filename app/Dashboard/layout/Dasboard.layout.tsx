@@ -1,34 +1,31 @@
-// DashboardLayout.tsx
+// app/Dashboard/components/DashboardLayout.tsx (o donde lo tengas)
+
 "use client";
 
-import React, { useRef, useState, useEffect } from "react";
-import Link from "next/link";
-import { useRouter, usePathname } from "next/navigation";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
-  Bell,
-  HelpCircle,
-  Search,
-  LayoutDashboard,
-  ShoppingCart,
-  Package,
   BarChart3,
-  Settings,
-  MessageSquare,
+  Bell,
   Box,
   ChevronRight,
+  HelpCircle,
+  LayoutDashboard,
   LogOut,
+  MessageSquare,
+  Package,
+  Search,
+  Settings,
+  ShoppingCart,
 } from "lucide-react";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
+import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useNotifications } from "../hooks/useNotifications";
-import { Notification } from "../interfaces/interface-Notification";
-import axios from "axios";
+import { Notification } from "../interfaces/interface-Notifications";
 
-
-
-// --- Componente: NotificationCenter ---
 
 function NotificationCenter({
   initialNotifications,
@@ -36,13 +33,16 @@ function NotificationCenter({
   initialNotifications: Notification[];
 }) {
   const [open, setOpen] = useState(false);
-  const { notifications, unreadCount, markAsRead, markAllRead } =
+  // Incluir 'error'
+  const { notifications, unreadCount, markAsRead, markAllRead, error } =
     useNotifications({ initialNotifications });
-  
-  const activeNotifications = notifications.filter(n => n.unread)
-  
+
+  // Muestra solo las no leídas en el dropdown
+  const activeNotifications = notifications.filter((n) => n.unread);
+
   const ref = useRef<HTMLDivElement | null>(null);
 
+  // Lógica de cierre externo y ESC (use client)
   useEffect(() => {
     function onDocClick(e: MouseEvent) {
       if (!ref.current) return;
@@ -62,6 +62,15 @@ function NotificationCenter({
     };
   }, []);
 
+  // Maneja el clic en el ítem: Marca como leído y cierra el menú (mejor UX)
+  const handleItemClick = useCallback(
+    (id: string) => {
+      markAsRead(id);
+      setOpen(false);
+    },
+    [markAsRead]
+  );
+
   return (
     <div className="relative" ref={ref}>
       <Button
@@ -78,10 +87,19 @@ function NotificationCenter({
         )}
       </Button>
 
+      {/* Indicador de Error */}
+      {error && (
+        <div className="absolute top-full right-0 mt-2 p-2 bg-red-100 text-red-700 rounded-md shadow-md z-50 w-80 border border-red-300">
+          <p className="text-sm">⚠️ Error de sincronización: {error}</p>
+        </div>
+      )}
+
       {open && (
         <div className="absolute right-0 mt-2 w-80 bg-white border border-slate-200 rounded-lg shadow-lg z-50">
           <div className="flex items-center justify-between px-4 py-3 border-b border-slate-200">
-            <strong className="text-sm font-semibold">Notifications</strong>
+            <strong className="text-sm font-semibold">
+              Notifications ({unreadCount})
+            </strong>
             {unreadCount > 0 && (
               <button
                 onClick={markAllRead}
@@ -95,7 +113,7 @@ function NotificationCenter({
           <div className="max-h-96 overflow-y-auto">
             {activeNotifications.length === 0 ? (
               <div className="p-6 text-center text-sm text-slate-500">
-                No notifications
+                No new notifications
               </div>
             ) : (
               <div className="p-2 space-y-2">
@@ -107,7 +125,7 @@ function NotificationCenter({
                         ? "ring-1 ring-blue-50 bg-blue-50/30"
                         : ""
                     }`}
-                    onClick={() => markAsRead(notification.id)}
+                    onClick={() => handleItemClick(notification.id)}
                   >
                     <AlertTitle className="text-sm">
                       {notification.title}
@@ -132,6 +150,7 @@ function NotificationCenter({
             <Link
               href="/Dashboard/views/orders"
               className="text-sm text-blue-600 hover:text-blue-700 font-medium"
+              onClick={() => setOpen(false)} // Cierra al navegar
             >
               View all orders →
             </Link>
@@ -141,8 +160,6 @@ function NotificationCenter({
     </div>
   );
 }
-
-// --- Datos de Navegación ---
 
 const navItems = [
   { name: "Dashboard", icon: LayoutDashboard, href: "/Dashboard" },
@@ -156,14 +173,12 @@ const navItems = [
   { name: "Settings", icon: Settings, href: "/Dashboard/views/settings" },
 ];
 
-// --- Definición de Props ---
+// --- Componente: DashboardLayout (sin cambios funcionales, sólo limpieza) ---
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
   initialNotifications: Notification[];
 }
-
-// --- Componente: DashboardLayout ---
 
 export function DashboardLayout({
   children,
@@ -174,12 +189,12 @@ export function DashboardLayout({
 
   const handleLogout = async () => {
     try {
-      await axios.post('/api/logout')
+      await fetch("/api/logout", { method: "POST" });
       router.push("/");
     } catch (error) {
-      console.error('Logout Error',error)
+      console.error('Error cookie not deleted', error)
     }
-    
+   
   };
 
   return (
