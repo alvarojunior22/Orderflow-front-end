@@ -1,20 +1,30 @@
+// interface-Order.ts
 export interface Order {
   id: string;
   customer: string;
   channel: "whatsapp" | "telegram";
-  amount: string;
-  status: "processing" | "awaiting" | "ready";
-  timeAgo: string;
-  isNew: boolean;
+  amount: number;
+  status: "processing" | "awaiting" | "ready" | "completed" | "cancelled";
+
+ 
+  createdAt: Date; 
+  updatedAt: Date; 
 }
+
 
 export interface Notification {
   id: string;
+  orderId: string;
   title: string;
   message: string;
-  time: string;
+  
+  
+  timestamp: Date; 
+  time: string;       
+  
   unread: boolean;
-  orderId: string;
-  status: Order["status"];
+  
+  error?:string
+ 
+  eventType: "new_order" | "status_change" | "payment_issue" | "cancellation";
 }
-

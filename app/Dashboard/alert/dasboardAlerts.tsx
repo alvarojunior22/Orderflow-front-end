@@ -1,46 +1,57 @@
-"use client"
 
-import React, { useState, useEffect, useRef } from "react"
-import Link from "next/link"
-import { Bell } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert"
-import { useNotifications } from "../hooks/useNotifications"
-import type { Notification } from "../interfaces/interface-Notification"
+
+"use client";
+
+import React, { useState, useEffect, useRef, useCallback } from "react";
+import Link from "next/link";
+import { Bell } from "lucide-react";
+import { Button } from "@/components/ui/button"; 
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert"; 
+import { useNotifications } from "../hooks/useNotifications";
+import { Notification } from "../interfaces/interface-Notification";
 
 interface DashboardAlertsProps {
-  initialNotifications: Notification[]
+  initialNotifications: Notification[];
 }
 
-export function DashboardAlerts({ initialNotifications }: DashboardAlertsProps) {
-  const [open, setOpen] = useState(false)
-  
-  
-  const { notifications, unreadCount, markAsRead, markAllRead } =
-    useNotifications({ initialNotifications })
-  
-  const ref = useRef<HTMLDivElement | null>(null)
+export function DashboardAlerts({
+  initialNotifications,
+}: DashboardAlertsProps) {
+  const [open, setOpen] = useState(false);
 
+  const { notifications, unreadCount, markAsRead, markAllRead, error } =
+    useNotifications({ initialNotifications });
+
+  const ref = useRef<HTMLDivElement | null>(null);
+
+ 
   useEffect(() => {
     function onDocClick(e: MouseEvent) {
-      if (!ref.current) return
-      if (!ref.current.contains(e.target as Node)) setOpen(false)
+      if (!ref.current) return;
+      if (!ref.current.contains(e.target as Node)) setOpen(false);
     }
 
     function onEsc(e: KeyboardEvent) {
-      if (e.key === "Escape") setOpen(false)
+      if (e.key === "Escape") setOpen(false);
     }
 
-    document.addEventListener("click", onDocClick)
-    document.addEventListener("keydown", onEsc)
+    document.addEventListener("click", onDocClick);
+    document.addEventListener("keydown", onEsc);
 
     return () => {
-      document.removeEventListener("click", onDocClick)
-      document.removeEventListener("keydown", onEsc)
-    }
-  }, [])
+      document.removeEventListener("click", onDocClick);
+      document.removeEventListener("keydown", onEsc);
+    };
+  }, []);
 
   
+  const handleItemClick = useCallback(
+    (id: string) => {
+      markAsRead(id);
+      setOpen(false);
+    },
+    [markAsRead]
+  );
 
   return (
     <div className="relative" ref={ref}>
@@ -57,6 +68,13 @@ export function DashboardAlerts({ initialNotifications }: DashboardAlertsProps) 
           <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full" />
         )}
       </Button>
+
+      {/* --- Indicador de Error (opcional) --- */}
+      {error && (
+        <Alert className="absolute top-full right-0 mt-2 p-2 bg-red-100 text-red-700 rounded-md shadow-md z-50 w-80">
+          <p className="text-sm">⚠️ {error}</p>
+        </Alert>
+      )}
 
       {open && (
         <div className="absolute right-0 mt-2 w-80 bg-white border border-slate-200 rounded-lg shadow-lg z-50">
@@ -89,7 +107,7 @@ export function DashboardAlerts({ initialNotifications }: DashboardAlertsProps) 
                         ? "ring-1 ring-blue-50 bg-blue-50/30"
                         : ""
                     }`}
-                    onClick={() => markAsRead(notification.id)}
+                    onClick={() => handleItemClick(notification.id)}
                   >
                     <AlertTitle className="text-sm">
                       {notification.title}
@@ -114,6 +132,7 @@ export function DashboardAlerts({ initialNotifications }: DashboardAlertsProps) 
             <Link
               href="/orders"
               className="text-sm text-blue-600 hover:text-blue-700 font-medium"
+              onClick={() => setOpen(false)} // Cierra al navegar
             >
               View all orders →
             </Link>
@@ -121,5 +140,5 @@ export function DashboardAlerts({ initialNotifications }: DashboardAlertsProps) 
         </div>
       )}
     </div>
-  )
+  );
 }

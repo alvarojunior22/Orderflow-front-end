@@ -8,12 +8,9 @@ import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Eye, Trash2, Globe, Smartphone, ShoppingBag, ChevronDown, ChevronRight, MapPin, Phone } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { DateRange } from "react-day-picker";
 
-export interface OrdersFilters {
-  status: string;
-  dateRange: DateRange | undefined;
-}
+
+
 
 interface Order {
   id: string
@@ -27,12 +24,14 @@ interface Order {
   items: { name: string; quantity: number; price: number }[]
   itemsSummary: string
   total: number
-  status: "pending" | "processing" | "ready" | "completed"
+  status: "pending" | "processing" | "ready" | "completed",
+  date: string
 }
 
-const mockOrders: Order[] = [
+export const mockOrders: Order[] = [
   {
     id: "ORD-2847",
+    date: '2025/12/11',
     customer: {
       name: "Sarah Johnson",
       avatar: "/professional-user.jpg",
@@ -51,6 +50,7 @@ const mockOrders: Order[] = [
   },
   {
     id: "ORD-2846",
+    date: '2025/12/22',
     customer: {
       name: "Michael Chen",
       avatar: "/professional-user.jpg",
@@ -68,6 +68,7 @@ const mockOrders: Order[] = [
   },
   {
     id: "ORD-2845",
+    date: '2025/04/10',
     customer: {
       name: "Emily Rodriguez",
       avatar: "/professional-user.jpg",
@@ -86,6 +87,7 @@ const mockOrders: Order[] = [
   },
   {
     id: "ORD-2844",
+    date: '2025/11/24',
     customer: {
       name: "David Kim",
       avatar: "/professional-user.jpg",
@@ -103,6 +105,7 @@ const mockOrders: Order[] = [
   },
   {
     id: "ORD-2843",
+    date: '2025/12/12',
     customer: {
       name: "Jessica Martinez",
       avatar: "/professional-user.jpg",
@@ -133,7 +136,7 @@ const channelIcons = {
   pos: ShoppingBag,
 }
 
-export function OrdersTable({filters}: {filters: OrdersFilters}) {
+export function OrdersTable() {
   const [expandedRow, setExpandedRow] = useState<string | null>("ORD-2847")
   const [selectedOrders, setSelectedOrders] = useState<string[]>([])
   const [orders, setOrders] = useState<Order[]>(mockOrders)
@@ -154,11 +157,6 @@ export function OrdersTable({filters}: {filters: OrdersFilters}) {
     }
   }
 
-  const filteredOrders = orders.filter((order) => {
-    const statusMatch = filters.status || order.status == filters.status
-
-    return statusMatch
-  })
 
   return (
     <div className="space-y-4">
@@ -198,7 +196,7 @@ export function OrdersTable({filters}: {filters: OrdersFilters}) {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filteredOrders.map((order) => {
+            {orders.map((order) => {
               const isExpanded = expandedRow === order.id
               const ChannelIcon = channelIcons[order.channel]
 
