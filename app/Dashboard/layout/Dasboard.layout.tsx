@@ -21,7 +21,12 @@ import {
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
+
 import { useNotifications } from "../hooks/useNotifications";
+import { useAuth } from "@/app/context/authcontext";
+import { Notification } from "../interfaces/interface-Notifications";
+
+/* -------------------- Notification Center -------------------- */
 
 function NotificationCenter() {
   const [open, setOpen] = useState(false);
@@ -30,10 +35,8 @@ function NotificationCenter() {
     useNotifications();
 
   const activeNotifications = notifications.filter((n) => n.unread);
-
   const ref = useRef<HTMLDivElement | null>(null);
 
-  // Close dropdown on outside click or ESC
   useEffect(() => {
     function onDocClick(e: MouseEvent) {
       if (!ref.current) return;
@@ -141,6 +144,8 @@ function NotificationCenter() {
   );
 }
 
+/* -------------------- Navigation -------------------- */
+
 const navItems = [
   { name: "Dashboard", icon: LayoutDashboard, href: "/Dashboard" },
   { name: "Live Orders", icon: ShoppingCart, href: "/Dashboard/views/orders" },
@@ -153,6 +158,8 @@ const navItems = [
   { name: "Settings", icon: Settings, href: "/Dashboard/views/settings" },
 ];
 
+/* -------------------- Layout -------------------- */
+
 interface DashboardLayoutProps {
   children: React.ReactNode;
 }
@@ -160,14 +167,16 @@ interface DashboardLayoutProps {
 export function DashboardLayout({ children }: DashboardLayoutProps) {
   const router = useRouter();
   const pathname = usePathname();
+  const { logout } = useAuth();
 
   const handleLogout = async () => {
-    await fetch("/api/logout", { method: "POST" });
-    router.push("/");
+    await logout();
+    router.push("/login");
   };
 
   return (
     <div className="flex h-screen bg-slate-50">
+      {/* Sidebar */}
       <aside className="w-64 bg-white border-r border-slate-200 flex flex-col">
         <div className="p-6 border-b border-slate-200">
           <Link href="/Dashboard" className="flex items-center gap-2">
@@ -216,6 +225,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
         </div>
       </aside>
 
+      {/* Main */}
       <div className="flex-1 flex flex-col overflow-hidden">
         <header className="bg-white border-b border-slate-200 px-6 py-4">
           <div className="flex items-center justify-between">
