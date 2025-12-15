@@ -1,60 +1,76 @@
 import { Order } from "@/app/Dashboard/interfaces/interface-Order";
 import { Notification } from "@/app/Dashboard/interfaces/interface-Notifications";
-import { mockOrders } from "../../../data/dataOrder";
+
+const lastKnownOrderState = new Map<
+  string,
+  { status: string; updatedAt: number }
+>();
+
 
 function generateNotifications(orders: Order[]): Notification[] {
-  const sortedOrders = [...orders].sort(
-    (a, b) => b.updatedAt.getTime() - a.updatedAt.getTime()
-  );
+  
+    const notifications: Notification[] = [];
 
-  const recentOrders = sortedOrders.slice(0, 5);
+    for (const order of orders) {
+      const prev = lastKnownOrderState.get(order.id);
 
-  return recentOrders.map((order, index) => {
-    let title: string;
-    let message: string;
-    let eventType: Notification["eventType"];
-    let unread: boolean;
+      // New order
+      if (!prev) {
+        notifications.push(createNotification(order, "new_order"));
+      }
 
-    if (index === 0) {
-      title = "🚨 Nuevo Evento Importante";
-      message = `La orden ${
-        order.id
-      } ha sido actualizada a ${order.status.toUpperCase()}.`;
-      eventType = "status_change";
-      unread = true;
-    } else if (order.status === "awaiting") {
-      title = "🟠 Pendiente de Procesar";
-      message = `Nueva orden ${order.id} esperando el primer paso.`;
-      eventType = "new_order";
-      unread = true;
-    } else {
-      title = `✅ Estatus: ${order.status.toUpperCase()}`;
-      message = `La orden ${order.id} se actualizó.`;
-      eventType = "status_change";
-      unread = index < 3;
+      // Status change
+      if (prev && prev.status !== order.status) {
+        notifications.push(createNotification(order, "status_change"));
+      }
+
+      lastKnownOrderState.set(order.id, {
+        status: order.status,
+        updatedAt: order.updatedAt.getTime(),
+      });
     }
 
-    const diffMs = Date.now() - order.updatedAt.getTime();
-    const minutes = Math.floor(diffMs / 60000);
-    const timeAgo =
-      minutes < 60
-        ? `${minutes} min ago`
-        : `${Math.floor(minutes / 60)} hrs ago`;
+    return notifications
+      .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())
+      .slice(0, 5);
+  }
 
-    return {
-      id: `n${order.id}`,
-      order,
-      title: title,
-      message: message,
-      time: timeAgo,
-      timestamp: order.updatedAt,
-      unread: unread,
-      eventType: eventType,
-    };
-  });
+
+
+function createNotification(
+  order: Order,
+  type: Notification["eventType"]
+): Notification {
+  const isNew = type === "new_order";
+
+  return {
+    id: `${type}-${order.id}-${order.updatedAt.getTime()}`,
+    order,
+    eventType: type,
+    unread: true,
+    timestamp: order.updatedAt,
+    time: formatTimeAgo(order.updatedAt),
+    title: isNew ? "New order received" : "Order status updated",
+    message: isNew
+      ? `Order ${order.id} has been created`
+      : `Order ${order.id} moved to ${order.status.toUpperCase()}`,
+  };
 }
 
-let storeNotifications: Notification[] = generateNotifications(mockOrders);
+function formatTimeAgo(date: Date): string {
+  const diff = Date.now() - date.getTime();
+  const minutes = Math.floor(diff / 60000);
+
+  if (minutes < 60) return `${minutes} min ago`;
+  return `${Math.floor(minutes / 60)} hrs ago`;
+}
+
+
+let storeNotifications: Notification[] = [];
+
+export const syncNotificationsFromOrders = (orders: Order[]) => {
+  storeNotifications = generateNotifications(orders);
+};
 
 export const getStoreNotifications = (): Notification[] => {
   return storeNotifications.slice();
@@ -62,10 +78,13 @@ export const getStoreNotifications = (): Notification[] => {
 
 export const updateStoreNotification = (id: string, unread: boolean) => {
   storeNotifications = storeNotifications.map((n) =>
-    n.id === id ? { ...n, unread: unread } : n
+    n.id === id ? { ...n, unread } : n
   );
 };
 
 export const markAllStoreNotificationsRead = () => {
-  storeNotifications = storeNotifications.map((n) => ({ ...n, unread: false }));
+  storeNotifications = storeNotifications.map((n) => ({
+    ...n,
+    unread: false,
+  }));
 };

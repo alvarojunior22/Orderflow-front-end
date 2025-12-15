@@ -1,34 +1,36 @@
-import { data } from "@/app/login/data/data.user";
 import { NextResponse } from "next/server";
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL as string;
+
 export async function POST(req: Request) {
-  const { username, password } = await req.json();
+  const { email, password } = await req.json();
 
-  const user = data.find(
-    (u) => u.email === username || u.fullName === username
-  );
+  const res = await fetch(`${API_URL}/api/auth/login`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email, password }),
+  });
 
-  if (!user) {
-    return NextResponse.json({ error: "invalid username" }, { status: 400 });
+  if (!res.ok) {
+    return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
   }
 
-  if (user.password !== password) {
-    return NextResponse.json({ error: "invalid password" }, { status: 400 });
-  }
+  const json = await res.json();
+  const { accessToken, refreshToken } = json.data.tokens;
+  const user = json.data.user;
 
-  // Guardar cookie
   const response = NextResponse.json({
-    ok: true,
-    role: user.role,
+    user,
+    accessToken,
   });
 
-  response.cookies.set("isLoggedIn", "true", {
+  response.cookies.set("refreshToken", refreshToken, {
     httpOnly: true,
-    maxAge: 60 * 60 * 24,
+    secure: true,
+    sameSite: "strict",
     path: "/",
+    maxAge: 60 * 60, // 1 hour
   });
-
-  
 
   return response;
 }

@@ -2,13 +2,14 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Order } from "@/app/Dashboard/interfaces/interface-Order";
-import { mockOrders } from "@/data/dataOrder";
+import { ApiOrdersResponse } from "@/app/Dashboard/types/api-order";
+import { adaptApiOrder } from "../adapters/order.adapter";
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL as string;
 
 interface UseLiveOrdersOptions {
   pollingMs?: number;
 }
-
-const USE_MOCKS = process.env.NEXT_PUBLIC_USE_MOCKS === "true";
 
 export function useLiveOrders({ pollingMs = 5000 }: UseLiveOrdersOptions = {}) {
   const [orders, setOrders] = useState<Order[]>([]);
@@ -18,49 +19,38 @@ export function useLiveOrders({ pollingMs = 5000 }: UseLiveOrdersOptions = {}) {
 
   const knownIds = useRef<Set<string>>(new Set());
 
-  const normalize = (data: Order[]) =>
-    data.map((o) => ({
-      ...o,
-      createdAt: new Date(o.createdAt),
-      updatedAt: new Date(o.updatedAt),
-    }));
-
-  const loadMockOrders = () => {
-    const normalized = normalize(mockOrders);
-    normalized.forEach((o) => knownIds.current.add(o.id));
-    setOrders(normalized);
-    setLoading(false);
-  };
-
   const fetchOrders = useCallback(async () => {
     try {
-      const res = await fetch("/api/orders", { cache: "no-store" });
-      if (!res.ok) throw new Error("Failed to fetch orders");
+      const res = await fetch(`${API_URL}/api/orders?limit=50&offset=0`, {
+        cache: "no-store",
+      });
 
-      const data: Order[] = await res.json();
-      const normalized = normalize(data);
+      if (!res.ok) {
+        throw new Error(`API error ${res.status}`);
+      }
+
+      const json: ApiOrdersResponse = await res.json();
+      const normalized = json.data.map(adaptApiOrder);
 
       const hasNew = normalized.some((o) => !knownIds.current.has(o.id));
+
       normalized.forEach((o) => knownIds.current.add(o.id));
 
-      if (hasNew) setHasNewOrders(true);
+      if (hasNew) {
+        setHasNewOrders(true);
+      }
 
       setOrders(normalized);
       setError(null);
     } catch (err) {
-      console.error(err);
-      setError("Unable to sync orders");
+      console.error("Failed to fetch orders:", err);
+      setError("Failed to fetch orders");
     } finally {
       setLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    if (USE_MOCKS) {
-      loadMockOrders();
-      return;
-    }
-
     fetchOrders();
     const interval = setInterval(fetchOrders, pollingMs);
     return () => clearInterval(interval);
