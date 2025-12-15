@@ -6,18 +6,21 @@ import {
   ShoppingCart,
   MessageSquare,
   AlertTriangle,
-  
 } from "lucide-react";
 
 import { useOrderMetrics } from "@/app/Dashboard/hooks/useMetricsOrder";
 import { useLiveOrders } from "@/app/Dashboard/hooks/useLiveOrders";
 
 export function KPICards() {
-  const { orders, loading } = useLiveOrders();
+  const { orders, loading, error } = useLiveOrders();
   const metrics = useOrderMetrics(orders);
 
   if (loading) {
     return <p className="text-slate-500">Loading metrics...</p>;
+  }
+
+  if (error) {
+    return <p className="text-red-500 text-sm">Error loading metrics</p>;
   }
 
   const kpis = [
@@ -56,6 +59,7 @@ export function KPICards() {
               <p className="text-sm text-slate-500">{kpi.title}</p>
               <p className="text-3xl font-bold">{kpi.value}</p>
             </div>
+
             <div
               className={`w-12 h-12 rounded-lg flex items-center justify-center ${kpi.color}`}
             >
