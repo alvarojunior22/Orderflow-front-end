@@ -1,4 +1,5 @@
 import { ApiOrderStatus } from "@/app/api/types/api-order";
+import { authFetch } from "@/lib/authFetch";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL!;
 
@@ -6,7 +7,7 @@ export async function updateOrderStatus(
   orderId: string,
   status: ApiOrderStatus
 ) {
-  const res = await fetch(`${API_URL}/api/orders/${orderId}/status`, {
+  const res = await authFetch(`${API_URL}/api/orders/${orderId}/status`, {
     method: "PATCH",
     headers: {
       "Content-Type": "application/json",

@@ -2,14 +2,15 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Order } from "@/app/Dashboard/interfaces/interface-Order";
-import { ApiOrdersResponse } from "@/app/Dashboard/types/api-order";
+import { ApiOrdersResponse } from "@/app/api/types/api-order";
 import { adaptApiOrder } from "../adapters/order.adapter";
 import { useAuth } from "@/app/context/authcontext";
+import { authFetch } from "@/lib/authFetch";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL as string;
 
 export function useLiveOrders(pollingMs = 5000) {
-  const { accessToken, storeId } = useAuth();
+  const { storeId } = useAuth();
 
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
@@ -19,19 +20,15 @@ export function useLiveOrders(pollingMs = 5000) {
   const knownIds = useRef<Set<string>>(new Set());
 
   const fetchOrders = useCallback(async () => {
-    if (!accessToken || !storeId) {
+    if (!storeId) {
       setLoading(false);
       return;
     }
 
     try {
-     const res = await fetch(`${API_URL}/api/orders?limit=50&offset=0`, {
-       headers: {
-         Authorization: `Bearer ${accessToken}`,
-         "x-store-id": storeId!,
-       },
-       cache: "no-store",
-     });
+      const res = await authFetch(`${API_URL}/api/orders?limit=50&offset=0`, {
+        cache: "no-store",
+      });
 
 
       if (!res.ok) {
@@ -55,7 +52,7 @@ export function useLiveOrders(pollingMs = 5000) {
     } finally {
       setLoading(false);
     }
-  }, [accessToken, storeId]);
+  }, [storeId]);
 
   useEffect(() => {
     fetchOrders();

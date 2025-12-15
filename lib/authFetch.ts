@@ -3,13 +3,19 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL as string;
 
 export async function authFetch(input: RequestInfo, init: RequestInit = {}) {
   const accessToken = localStorage.getItem("accessToken");
+  const storeId = localStorage.getItem("storeId");
+
+  const initHeaders = new Headers(init.headers);
+  if (accessToken) {
+    initHeaders.set("Authorization", `Bearer ${accessToken}`);
+  }
+  if (storeId && !initHeaders.has("x-store-id")) {
+    initHeaders.set("x-store-id", storeId);
+  }
 
   const res = await fetch(input, {
     ...init,
-    headers: {
-      ...(init.headers || {}),
-      Authorization: `Bearer ${accessToken}`,
-    },
+    headers: initHeaders,
   });
 
   if (res.status !== 401) return res;
@@ -35,11 +41,14 @@ export async function authFetch(input: RequestInfo, init: RequestInit = {}) {
   localStorage.setItem("accessToken", newTokens.accessToken);
   localStorage.setItem("refreshToken", newTokens.refreshToken);
 
+  const retryHeaders = new Headers(init.headers);
+  retryHeaders.set("Authorization", `Bearer ${newTokens.accessToken}`);
+  if (storeId && !retryHeaders.has("x-store-id")) {
+    retryHeaders.set("x-store-id", storeId);
+  }
+
   return fetch(input, {
     ...init,
-    headers: {
-      ...(init.headers || {}),
-      Authorization: `Bearer ${newTokens.accessToken}`,
-    },
+    headers: retryHeaders,
   });
 }
