@@ -8,98 +8,26 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch"
 import { AlertCircle, AlertTriangle } from "lucide-react"
 import Image from "next/image"
-import { useState } from "react"
+import { useEffect, useState } from "react"
+import type { InventoryProduct } from "@/app/Dashboard/interfaces/interface-Product"
+import { useInventoryProducts } from "@/app/Dashboard/hooks/useInventoryProducts"
 
-interface Product {
-  id: string
-  image: string
-  name: string
-  barcode: string
-  category: string
-  unitType: string
-  stock: number
-  price: number
-  active: boolean
-  isDuplicate?: boolean
-  duplicateOf?: string
+interface InventoryGridProps {
+  searchQuery?: string
+  reloadKey?: number
 }
 
-const mockProducts: Product[] = [
-  {
-    id: "1",
-    image: "/coffee-beans.jpg",
-    name: "Premium Coffee Beans",
-    barcode: "8901234567890",
-    category: "Beverages",
-    unitType: "Bulk/Kg",
-    stock: 45,
-    price: 24.99,
-    active: true,
-    isDuplicate: true,
-    duplicateOf: "2",
-  },
-  {
-    id: "2",
-    image: "/coffee-beans.jpg",
-    name: "Premium Coffee Beans",
-    barcode: "8901234567890",
-    category: "Beverages",
-    unitType: "Bulk/Kg",
-    stock: 45,
-    price: 24.99,
-    active: true,
-    isDuplicate: true,
-    duplicateOf: "1",
-  },
-  {
-    id: "3",
-    image: "/green-tea.jpg",
-    name: "Organic Green Tea",
-    barcode: "8901234567891",
-    category: "Beverages",
-    unitType: "Unit/Pcs",
-    stock: 120,
-    price: 8.99,
-    active: true,
-  },
-  {
-    id: "4",
-    image: "/chocolate-bar.png",
-    name: "Dark Chocolate Bar",
-    barcode: "8901234567892",
-    category: "Snacks",
-    unitType: "Unit/Pcs",
-    stock: 3,
-    price: 3.49,
-    active: true,
-  },
-  {
-    id: "5",
-    image: "/glass-of-orange-juice.png",
-    name: "Fresh Orange Juice",
-    barcode: "8901234567893",
-    category: "Beverages",
-    unitType: "Unit/Pcs",
-    stock: 28,
-    price: 5.99,
-    active: false,
-  },
-  {
-    id: "6",
-    image: "/colorful-pasta-arrangement.png",
-    name: "Italian Pasta",
-    barcode: "8901234567894",
-    category: "Food",
-    unitType: "Bulk/Kg",
-    stock: 0,
-    price: 12.99,
-    active: true,
-  },
-]
-
-export function InventoryGrid() {
-  const [products, setProducts] = useState(mockProducts)
+export function InventoryGrid({ searchQuery, reloadKey }: InventoryGridProps) {
+  const { products: fetchedProducts, loading, error } = useInventoryProducts({
+    searchQuery,
+    reloadKey,
+  })
+  const [products, setProducts] = useState<InventoryProduct[]>([])
   const [showDuplicateAlert, setShowDuplicateAlert] = useState(true)
+
+  useEffect(() => {
+    setProducts(fetchedProducts)
+  }, [fetchedProducts])
 
   const duplicateProducts = products.filter((p) => p.isDuplicate)
 
@@ -133,6 +61,18 @@ export function InventoryGrid() {
 
   return (
     <div className="space-y-4">
+      {loading && (
+        <Alert className="bg-slate-50 border-slate-200">
+          <AlertDescription>Loading products...</AlertDescription>
+        </Alert>
+      )}
+
+      {error && !loading && (
+        <Alert variant="destructive">
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
+
       {/* Duplicate Alert */}
       {showDuplicateAlert && duplicateProducts.length > 0 && (
         <Alert className="bg-amber-50 border-amber-200">

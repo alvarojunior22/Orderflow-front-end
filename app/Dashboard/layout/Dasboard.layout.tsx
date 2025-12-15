@@ -162,6 +162,7 @@ const navItems = [
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
+  currentPage?: string;
 }
 
 export function DashboardLayout({ children }: DashboardLayoutProps) {
