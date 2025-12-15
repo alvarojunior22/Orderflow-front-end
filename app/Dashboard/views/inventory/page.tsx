@@ -5,7 +5,7 @@ import { InventoryGrid } from "@/components/inventory-grid"
 import { InventoryHeader } from "@/components/inventory-header"
 import { useState } from "react"
 import { useAuth } from "@/app/context/authcontext"
-import { log } from "console"
+
 
 export default function InventoryPage() {
   const { user } = useAuth();
