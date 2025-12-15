@@ -41,8 +41,9 @@ interface UseOrderStatsResult {
 
 export function useOrderStats(): UseOrderStatsResult {
   const [stats, setStats] = useState<OrderStats | null>(null);
-  const [loading, setLoading] = useState<boolean>(true);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
   const { storeId } = useAuth();
 
   useEffect(() => {
@@ -60,7 +61,11 @@ export function useOrderStats(): UseOrderStatsResult {
 
       try {
         setLoading(true);
-        const res = await authFetch(`${API_URL}/api/orders/stats`);
+
+        const res = await authFetch(
+          `${API_URL}/api/orders/stats?store_id=${storeId}`,
+          { cache: "no-store" }
+        );
 
         if (!res.ok) {
           const errorBody = await res.text();
@@ -70,11 +75,9 @@ export function useOrderStats(): UseOrderStatsResult {
         const json: ApiOrderStatsResponse = await res.json();
         const data = json.data;
 
-        if (!isActive) {
-          return;
-        }
+        if (!isActive) return;
 
-        const mappedStats: OrderStats = {
+        setStats({
           totalOrders: data.total_orders,
           pending: data.pending,
           confirmed: data.confirmed,
@@ -83,9 +86,8 @@ export function useOrderStats(): UseOrderStatsResult {
           delivered: data.delivered,
           cancelled: data.cancelled,
           totalRevenue: data.total_revenue,
-        };
+        });
 
-        setStats(mappedStats);
         setError(null);
       } catch (err) {
         console.error("Failed to fetch order stats:", err);

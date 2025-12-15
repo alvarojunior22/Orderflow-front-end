@@ -1,7 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { listProducts, searchProducts } from "@/app/Dashboard/services/product.services";
+import {
+  listProducts,
+  searchProducts,
+} from "@/app/Dashboard/services/product.services";
 import type { InventoryProduct } from "@/app/Dashboard/interfaces/interface-Product";
 import { adaptApiProduct } from "@/app/Dashboard/adapters/product.adapter";
 import { useAuth } from "@/app/context/authcontext";
@@ -23,8 +26,9 @@ export function useInventoryProducts(
 ): UseInventoryProductsResult {
   const { limit = 50, searchQuery, reloadKey } = options;
   const [products, setProducts] = useState<InventoryProduct[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
   const { storeId } = useAuth();
 
   useEffect(() => {
@@ -44,15 +48,22 @@ export function useInventoryProducts(
 
         const trimmedQuery = searchQuery?.trim();
 
-        const response = trimmedQuery && trimmedQuery.length > 0
-          ? await searchProducts({ q: trimmedQuery, limit, offset: 0, storeId })
-          : await listProducts({ limit, offset: 0, storeId });
+        const response =
+          trimmedQuery && trimmedQuery.length > 0
+            ? await searchProducts({
+                q: trimmedQuery,
+                limit,
+                offset: 0,
+              })
+            : await listProducts({
+                storeId,
+                limit,
+                offset: 0,
+              });
 
-        if (!isActive) {
-          return;
-        }
+        if (!isActive) return;
 
-        const mapped: InventoryProduct[] = response.data.map(adaptApiProduct);
+        const mapped = response.data.map(adaptApiProduct);
         setProducts(mapped);
         setError(null);
       } catch (err) {

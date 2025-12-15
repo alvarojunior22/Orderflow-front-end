@@ -1,82 +1,102 @@
 "use client";
 
-import { Card, CardContent } from "@/components/ui/card";
 import {
   DollarSign,
   ShoppingCart,
-  MessageSquare,
-  AlertTriangle,
+  Clock,
+  CheckCircle,
+  Truck,
+  XCircle,
 } from "lucide-react";
-
-import { useOrderMetrics } from "@/app/Dashboard/hooks/useMetricsOrder";
-import { useLiveOrders } from "@/app/Dashboard/hooks/useLiveOrders";
+import { Card, CardContent } from "@/components/ui/card";
 import { useOrderStats } from "@/app/Dashboard/hooks/useOrderStats";
 
+/* -------------------- Helpers -------------------- */
+
+const money = (value?: number) => `$${(value ?? 0).toFixed(2)}`;
+const num = (value?: number) => (value ?? 0).toString();
+
+/* -------------------- Component -------------------- */
+
 export function KPICards() {
-  const { orders, loading, error } = useLiveOrders();
-  const metrics = useOrderMetrics(orders);
-  const {
-    stats,
-    loading: statsLoading,
-    error: statsError,
-  } = useOrderStats();
+  const { stats, loading, error } = useOrderStats();
 
-  if (loading || statsLoading) {
-    return <p className="text-slate-500">Loading metrics...</p>;
+  if (loading) {
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
+        {Array.from({ length: 6 }).map((_, i) => (
+          <Card key={i} className="animate-pulse">
+            <CardContent className="p-4 h-24 bg-slate-100 rounded-lg" />
+          </Card>
+        ))}
+      </div>
+    );
   }
 
-  if (error || statsError) {
-    return <p className="text-red-500 text-sm">Error loading metrics</p>;
+  if (error || !stats) {
+    return (
+      <Card>
+        <CardContent className="p-6 text-center text-sm text-red-600">
+          Failed to load KPIs
+        </CardContent>
+      </Card>
+    );
   }
 
-  const revenue = stats ? stats.totalRevenue : metrics.revenueToday;
-  const activeOrdersFromStats = stats
-    ? stats.pending + stats.confirmed + stats.preparing + stats.inTransit
-    : null;
-  const activeOrders =
-    activeOrdersFromStats !== null ? activeOrdersFromStats : metrics.activeOrdersCount;
-
-  const kpis = [
+  const cards = [
     {
-      title: "Today's Revenue",
-      value: `$${revenue.toFixed(2)}`,
+      title: "Revenue",
+      value: money(stats.totalRevenue),
       icon: DollarSign,
       color: "text-green-600 bg-green-100",
     },
     {
-      title: "Active Orders",
-      value: activeOrders,
+      title: "Total Orders",
+      value: num(stats.totalOrders),
       icon: ShoppingCart,
       color: "text-blue-600 bg-blue-100",
     },
     {
-      title: "New Orders Today",
-      value: metrics.newOrdersCount,
-      icon: MessageSquare,
+      title: "Pending",
+      value: num(stats.pending),
+      icon: Clock,
+      color: "text-yellow-600 bg-yellow-100",
+    },
+    {
+      title: "Confirmed",
+      value: num(stats.confirmed),
+      icon: CheckCircle,
+      color: "text-indigo-600 bg-indigo-100",
+    },
+    {
+      title: "In Transit",
+      value: num(stats.inTransit),
+      icon: Truck,
       color: "text-purple-600 bg-purple-100",
     },
     {
-      title: "Alerts",
-      value: metrics.alertOrdersCount,
-      icon: AlertTriangle,
-      color: "text-amber-600 bg-amber-100",
+      title: "Cancelled",
+      value: num(stats.cancelled),
+      icon: XCircle,
+      color: "text-red-600 bg-red-100",
     },
   ];
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-      {kpis.map((kpi) => (
-        <Card key={kpi.title}>
-          <CardContent className="p-6 flex justify-between items-start">
+    <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
+      {cards.map((card) => (
+        <Card key={card.title}>
+          <CardContent className="p-4 flex items-center justify-between">
             <div>
-              <p className="text-sm text-slate-500">{kpi.title}</p>
-              <p className="text-3xl font-bold">{kpi.value}</p>
+              <p className="text-sm text-slate-500">{card.title}</p>
+              <p className="text-xl font-semibold text-slate-900">
+                {card.value}
+              </p>
             </div>
-
             <div
-              className={`w-12 h-12 rounded-lg flex items-center justify-center ${kpi.color}`}
+              className={`w-10 h-10 rounded-lg flex items-center justify-center ${card.color}`}
             >
-              <kpi.icon className="w-6 h-6" />
+              <card.icon className="w-5 h-5" />
             </div>
           </CardContent>
         </Card>

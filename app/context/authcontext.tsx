@@ -1,6 +1,12 @@
 "use client";
 
-import { createContext, useContext, useState, useCallback, useEffect } from "react";
+import {
+  createContext,
+  useContext,
+  useState,
+  useCallback,
+  useEffect,
+} from "react";
 import type { ApiMyStoresResponse } from "@/app/api/types/api-store";
 
 interface AuthTokens {
@@ -29,12 +35,8 @@ interface AuthSuccessResponse {
 }
 
 interface ApiErrorResponse {
-  success?: boolean;
   message?: string;
-  code?: string;
 }
-
-type SetAuthField = (value: string | null) => void;
 
 interface AuthContextType {
   user: AuthUser | null;
@@ -51,129 +53,47 @@ interface AuthContextType {
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
-
 const API_URL = process.env.NEXT_PUBLIC_API_URL as string;
 
-function extractStoreIdFromAuthResponse(json: AuthSuccessResponse): string | null {
-  const storeFromResponse = json.data.store;
-  const user = json.data.user;
+/* -------------------- Helpers -------------------- */
 
-  if (storeFromResponse?.id) {
-    return storeFromResponse.id;
-  }
-
-  if (user.storeId) {
-    return user.storeId;
-  }
-
-  return null;
+function extractStoreId(json: AuthSuccessResponse): string | null {
+  return json.data.store?.id ?? json.data.user.storeId ?? null;
 }
-async function resolveStoreIdFromApi(accessToken: string): Promise<string | null> {
+
+async function resolveStoreId(accessToken: string): Promise<string | null> {
   try {
     const res = await fetch(`${API_URL}/api/stores/my-stores`, {
-      method: "GET",
       headers: {
-        "Content-Type": "application/json",
         Authorization: `Bearer ${accessToken}`,
       },
     });
 
-    if (!res.ok) {
-      return null;
-    }
+    if (!res.ok) return null;
 
     const json: ApiMyStoresResponse = await res.json();
-
-    if (!Array.isArray(json.data) || json.data.length === 0) {
-      return null;
-    }
-
-    const firstStore = json.data[0];
-    if (!firstStore || typeof firstStore.id !== "string") {
-      return null;
-    }
-
-    return firstStore.id;
+    return json.data?.[0]?.id ?? null;
   } catch {
     return null;
   }
 }
-function persistAuthState(
-  setUser: (user: AuthUser | null) => void,
-  setAccessToken: SetAuthField,
-  setRefreshToken: SetAuthField,
-  setStoreId: SetAuthField,
-  json: AuthSuccessResponse
-): void {
-  const { accessToken, refreshToken } = json.data.tokens;
-  const resolvedStoreId = extractStoreIdFromAuthResponse(json);
 
-  setUser(json.data.user);
-  setAccessToken(accessToken);
-  setRefreshToken(refreshToken);
-  setStoreId(resolvedStoreId);
-
-  if (typeof window !== "undefined") {
-    localStorage.setItem("accessToken", accessToken);
-    localStorage.setItem("refreshToken", refreshToken);
-    localStorage.setItem("user", JSON.stringify(json.data.user));
-
-    if (resolvedStoreId) {
-      localStorage.setItem("storeId", resolvedStoreId);
-    } else {
-      localStorage.removeItem("storeId");
-    }
-  }
-}
-
-async function extractErrorMessage(
-  res: Response,
-  defaultMessage: string
-): Promise<string> {
+async function extractError(res: Response, fallback: string) {
   try {
-    const errorJson: ApiErrorResponse = await res.json();
-    if (errorJson.message && typeof errorJson.message === "string") {
-      return errorJson.message;
-    }
+    const json: ApiErrorResponse = await res.json();
+    return json.message ?? fallback;
   } catch {
-    // Ignore JSON parse errors and fall back to default message
+    return fallback;
   }
-
-  return defaultMessage;
 }
+
+/* -------------------- Provider -------------------- */
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(() => {
-    if (typeof window === "undefined") {
-      return null;
-    }
-
-    const storedUser = window.localStorage.getItem("user");
-    if (!storedUser) {
-      return null;
-    }
-
-    try {
-      const parsed: unknown = JSON.parse(storedUser);
-      if (typeof parsed !== "object" || parsed === null) {
-        return null;
-      }
-
-      const candidate = parsed as Partial<AuthUser>;
-      if (typeof candidate.id !== "string" || typeof candidate.email !== "string") {
-        return null;
-      }
-
-      return {
-        id: candidate.id,
-        email: candidate.email,
-        role: typeof candidate.role === "string" ? candidate.role : "",
-        created_at: typeof candidate.created_at === "string" ? candidate.created_at : "",
-        storeId: candidate.storeId,
-      };
-    } catch {
-      return null;
-    }
+    if (typeof window === "undefined") return null;
+    const raw = localStorage.getItem("user");
+    return raw ? JSON.parse(raw) : null;
   });
 
   const [accessToken, setAccessToken] = useState<string | null>(
@@ -188,33 +108,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     typeof window !== "undefined" ? localStorage.getItem("storeId") : null
   );
 
+  /* -------- Sync storeId if missing -------- */
+
   useEffect(() => {
-    if (!accessToken || storeId) {
-      return;
-    }
+    if (!accessToken || storeId) return;
 
-    let cancelled = false;
-
-    const syncStoreId = async () => {
-      const resolved = await resolveStoreIdFromApi(accessToken);
-
-      if (!resolved || cancelled) {
-        return;
-      }
-
+    resolveStoreId(accessToken).then((resolved) => {
+      if (!resolved) return;
       setStoreId(resolved);
-
-      if (typeof window !== "undefined") {
-        window.localStorage.setItem("storeId", resolved);
-      }
-    };
-
-    void syncStoreId();
-
-    return () => {
-      cancelled = true;
-    };
+      localStorage.setItem("storeId", resolved);
+    });
   }, [accessToken, storeId]);
+
+  /* -------------------- Login -------------------- */
 
   const login = useCallback(async (email: string, password: string) => {
     const res = await fetch(`${API_URL}/api/auth/login`, {
@@ -224,51 +130,56 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     });
 
     if (!res.ok) {
-      const message = await extractErrorMessage(res, "Invalid credentials");
-      throw new Error(message);
+      throw new Error(await extractError(res, "Invalid credentials"));
     }
 
     const json: AuthSuccessResponse = await res.json();
+    const { accessToken, refreshToken } = json.data.tokens;
+    const resolvedStoreId = extractStoreId(json);
 
-    persistAuthState(setUser, setAccessToken, setRefreshToken, setStoreId, json);
+    setUser(json.data.user);
+    setAccessToken(accessToken);
+    setRefreshToken(refreshToken);
+    setStoreId(resolvedStoreId);
+
+    // 🔑 tokens reales
+    localStorage.setItem("accessToken", accessToken);
+    localStorage.setItem("refreshToken", refreshToken);
+    localStorage.setItem("user", JSON.stringify(json.data.user));
+
+    if (resolvedStoreId) {
+      localStorage.setItem("storeId", resolvedStoreId);
+    }
+
+    // 🍪 flag para middleware
+    document.cookie = "auth=1; path=/; SameSite=Lax";
   }, []);
+
+  /* -------------------- Register -------------------- */
 
   const register = useCallback(
     async (email: string, password: string, fullName?: string) => {
-      const payload: {
-        email: string;
-        password: string;
-        full_name?: string;
-      } = {
-        email,
-        password,
-      };
-
-      if (fullName) {
-        payload.full_name = fullName;
-      }
-
       const res = await fetch(`${API_URL}/api/auth/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
+        body: JSON.stringify({
+          email,
+          password,
+          ...(fullName ? { full_name: fullName } : {}),
+        }),
       });
 
       if (!res.ok) {
-        const message = await extractErrorMessage(
-          res,
-          "Registration failed"
-        );
-        throw new Error(message);
+        throw new Error(await extractError(res, "Registration failed"));
       }
 
       const json: AuthSuccessResponse = await res.json();
-
-      persistAuthState(setUser, setAccessToken, setRefreshToken, setStoreId, json);
+      await login(email, password);
     },
-    []
+    [login]
   );
 
+  /* -------------------- Logout -------------------- */
 
   const logout = useCallback(() => {
     setUser(null);
@@ -276,25 +187,31 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setRefreshToken(null);
     setStoreId(null);
 
-    localStorage.removeItem("accessToken");
-    localStorage.removeItem("refreshToken");
-    localStorage.removeItem("storeId");
-    localStorage.removeItem("user");
+    localStorage.clear();
+    document.cookie = "auth=; path=/; max-age=0";
   }, []);
 
   return (
     <AuthContext.Provider
-      value={{ user, accessToken, refreshToken, storeId, login, register, logout }}
+      value={{
+        user,
+        accessToken,
+        refreshToken,
+        storeId,
+        login,
+        register,
+        logout,
+      }}
     >
       {children}
     </AuthContext.Provider>
   );
 }
 
+/* -------------------- Hook -------------------- */
+
 export function useAuth() {
   const ctx = useContext(AuthContext);
-  if (!ctx) {
-    throw new Error("useAuth must be used inside AuthProvider");
-  }
+  if (!ctx) throw new Error("useAuth must be used inside AuthProvider");
   return ctx;
 }

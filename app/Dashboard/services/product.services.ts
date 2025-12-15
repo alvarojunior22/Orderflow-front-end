@@ -33,20 +33,20 @@ export interface CreateProductPayload {
 
 export type UpdateProductPayload = Partial<Omit<CreateProductPayload, "storeId">>;
 
-export async function listProducts(params: ListProductsParams = {}): Promise<ApiProductsListResponse> {
+export async function listProducts(
+  params: ListProductsParams
+): Promise<ApiProductsListResponse> {
+  const { storeId, limit = 50, offset = 0 } = params;
+
+  if (!storeId) {
+    throw new Error("storeId is required to list products");
+  }
+
   const url = new URL("/api/products", API_URL);
 
-  if (typeof params.limit === "number") {
-    url.searchParams.set("limit", String(params.limit));
-  }
-
-  if (typeof params.offset === "number") {
-    url.searchParams.set("offset", String(params.offset));
-  }
-
-  if (params.storeId) {
-    url.searchParams.set("storeId", params.storeId);
-  }
+  url.searchParams.set("storeId", storeId);
+  url.searchParams.set("limit", String(limit));
+  url.searchParams.set("offset", String(offset));
 
   const res = await authFetch(url.toString());
 
@@ -55,11 +55,14 @@ export async function listProducts(params: ListProductsParams = {}): Promise<Api
     throw new Error(body || "Failed to list products");
   }
 
-  const json: ApiProductsListResponse = await res.json();
-  return json;
+  return res.json();
 }
 
-export async function searchProducts(params: SearchProductsParams): Promise<ApiProductsListResponse> {
+
+
+export async function searchProducts(
+  params: SearchProductsParams
+): Promise<ApiProductsListResponse> {
   const url = new URL("/api/products/search", API_URL);
 
   url.searchParams.set("q", params.q);
@@ -72,10 +75,6 @@ export async function searchProducts(params: SearchProductsParams): Promise<ApiP
     url.searchParams.set("offset", String(params.offset));
   }
 
-  if (params.storeId) {
-    url.searchParams.set("storeId", params.storeId);
-  }
-
   const res = await authFetch(url.toString());
 
   if (!res.ok) {
@@ -83,9 +82,9 @@ export async function searchProducts(params: SearchProductsParams): Promise<ApiP
     throw new Error(body || "Failed to search products");
   }
 
-  const json: ApiProductsListResponse = await res.json();
-  return json;
+  return res.json();
 }
+
 
 export async function getProduct(id: string): Promise<ApiProduct> {
   const res = await authFetch(`${API_URL}/api/products/${id}`);

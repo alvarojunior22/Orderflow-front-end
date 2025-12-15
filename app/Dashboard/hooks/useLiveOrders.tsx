@@ -26,10 +26,10 @@ export function useLiveOrders(pollingMs = 5000) {
     }
 
     try {
-      const res = await authFetch(`${API_URL}/api/orders?limit=50&offset=0`, {
-        cache: "no-store",
-      });
-
+      const res = await authFetch(
+        `${API_URL}/api/orders/store/${storeId}?limit=50&offset=0`,
+        { cache: "no-store" }
+      );
 
       if (!res.ok) {
         const errorBody = await res.text();
@@ -60,5 +60,10 @@ export function useLiveOrders(pollingMs = 5000) {
     return () => clearInterval(interval);
   }, [fetchOrders, pollingMs]);
 
-  return { orders, loading, error, hasNewOrders };
+  return {
+    orders,
+    loading,
+    error,
+    hasNewOrders,
+  };
 }
