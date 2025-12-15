@@ -132,13 +132,33 @@ export function InventoryGrid({ searchQuery, reloadKey }: InventoryGridProps) {
                   {/* Image */}
                   <td className="px-4 py-3">
                     <div className="relative w-12 h-12 rounded-md overflow-hidden bg-slate-100">
-                      <Image
-                        src={product.image || "/placeholder.svg"}
-                        alt={product.name}
-                        fill
-                        className="object-cover"
-                        sizes="48px"
-                      />
+                      {(() => {
+                        const imageSrc = (product.image && product.image.trim().length > 0)
+                          ? product.image
+                          : "/placeholder.svg";
+
+                        const isExternal = imageSrc.startsWith("http://") || imageSrc.startsWith("https://");
+
+                        if (isExternal) {
+                          return (
+                            <img
+                              src={imageSrc}
+                              alt={product.name}
+                              className="object-cover w-full h-full"
+                            />
+                          );
+                        }
+
+                        return (
+                          <Image
+                            src={imageSrc}
+                            alt={product.name}
+                            fill
+                            className="object-cover"
+                            sizes="48px"
+                          />
+                        );
+                      })()}
                     </div>
                   </td>
 

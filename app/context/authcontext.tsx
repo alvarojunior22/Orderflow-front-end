@@ -1,6 +1,7 @@
 "use client";
 
-import { createContext, useContext, useState, useCallback } from "react";
+import { createContext, useContext, useState, useCallback, useEffect } from "react";
+import type { ApiMyStoresResponse } from "@/app/api/types/api-store";
 
 interface AuthTokens {
   accessToken: string;
@@ -66,6 +67,36 @@ function extractStoreIdFromAuthResponse(json: AuthSuccessResponse): string | nul
   }
 
   return null;
+}
+async function resolveStoreIdFromApi(accessToken: string): Promise<string | null> {
+  try {
+    const res = await fetch(`${API_URL}/api/stores/my-stores`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${accessToken}`,
+      },
+    });
+
+    if (!res.ok) {
+      return null;
+    }
+
+    const json: ApiMyStoresResponse = await res.json();
+
+    if (!Array.isArray(json.data) || json.data.length === 0) {
+      return null;
+    }
+
+    const firstStore = json.data[0];
+    if (!firstStore || typeof firstStore.id !== "string") {
+      return null;
+    }
+
+    return firstStore.id;
+  } catch {
+    return null;
+  }
 }
 function persistAuthState(
   setUser: (user: AuthUser | null) => void,
@@ -156,6 +187,34 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [storeId, setStoreId] = useState<string | null>(
     typeof window !== "undefined" ? localStorage.getItem("storeId") : null
   );
+
+  useEffect(() => {
+    if (!accessToken || storeId) {
+      return;
+    }
+
+    let cancelled = false;
+
+    const syncStoreId = async () => {
+      const resolved = await resolveStoreIdFromApi(accessToken);
+
+      if (!resolved || cancelled) {
+        return;
+      }
+
+      setStoreId(resolved);
+
+      if (typeof window !== "undefined") {
+        window.localStorage.setItem("storeId", resolved);
+      }
+    };
+
+    void syncStoreId();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [accessToken, storeId]);
 
   const login = useCallback(async (email: string, password: string) => {
     const res = await fetch(`${API_URL}/api/auth/login`, {
