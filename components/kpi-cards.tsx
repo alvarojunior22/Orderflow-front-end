@@ -10,29 +10,42 @@ import {
 
 import { useOrderMetrics } from "@/app/Dashboard/hooks/useMetricsOrder";
 import { useLiveOrders } from "@/app/Dashboard/hooks/useLiveOrders";
+import { useOrderStats } from "@/app/Dashboard/hooks/useOrderStats";
 
 export function KPICards() {
   const { orders, loading, error } = useLiveOrders();
   const metrics = useOrderMetrics(orders);
+  const {
+    stats,
+    loading: statsLoading,
+    error: statsError,
+  } = useOrderStats();
 
-  if (loading) {
+  if (loading || statsLoading) {
     return <p className="text-slate-500">Loading metrics...</p>;
   }
 
-  if (error) {
+  if (error || statsError) {
     return <p className="text-red-500 text-sm">Error loading metrics</p>;
   }
+
+  const revenue = stats ? stats.totalRevenue : metrics.revenueToday;
+  const activeOrdersFromStats = stats
+    ? stats.pending + stats.confirmed + stats.preparing + stats.inTransit
+    : null;
+  const activeOrders =
+    activeOrdersFromStats !== null ? activeOrdersFromStats : metrics.activeOrdersCount;
 
   const kpis = [
     {
       title: "Today's Revenue",
-      value: `$${metrics.revenueToday.toFixed(2)}`,
+      value: `$${revenue.toFixed(2)}`,
       icon: DollarSign,
       color: "text-green-600 bg-green-100",
     },
     {
       title: "Active Orders",
-      value: metrics.activeOrdersCount,
+      value: activeOrders,
       icon: ShoppingCart,
       color: "text-blue-600 bg-blue-100",
     },
