@@ -23,6 +23,7 @@ import { cn } from "@/lib/utils";
 import { useLiveOrders } from "@/app/Dashboard/hooks/useLiveOrders";
 import type { Order as LiveOrder } from "@/app/Dashboard/interfaces/interface-Order";
 import { OrderStatusActions } from "@/components/order-status-actions";
+import { toast } from "@/components/ui/use-toast";
 
 /* -------------------- Types -------------------- */
 
@@ -130,6 +131,17 @@ export function OrdersTable() {
     setOrders((prev) => prev.map((o) => (o.id === id ? { ...o, status } : o)));
   };
 
+  const handlePrint = () => {
+    window.print();
+  };
+
+  const handleMarkDelivered = () => {
+    toast({
+      title: "Not available",
+      description: "Mark as delivered is not supported by the current API endpoint.",
+    });
+  };
+
   return (
     <div className="space-y-4">
       {selectedOrders.length > 0 && (
@@ -138,10 +150,14 @@ export function OrdersTable() {
             {selectedOrders.length} order(s) selected
           </span>
           <div className="ml-auto flex gap-2">
-            <Button size="sm" variant="outline">
+            <Button size="sm" variant="outline" onClick={handlePrint}>
               Print
             </Button>
-            <Button size="sm" className="bg-blue-600 text-white">
+            <Button
+              size="sm"
+              className="bg-blue-600 text-white"
+              onClick={handleMarkDelivered}
+            >
               Mark as delivered
             </Button>
           </div>

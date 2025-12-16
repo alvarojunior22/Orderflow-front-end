@@ -9,7 +9,8 @@ import {
   XCircle,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
-import { useOrderStats } from "@/app/Dashboard/hooks/useOrderStats";
+import { useMemo } from "react";
+import { useLiveOrders } from "@/app/Dashboard/hooks/useLiveOrders";
 
 /* -------------------- Helpers -------------------- */
 
@@ -19,7 +20,27 @@ const num = (value?: number) => (value ?? 0).toString();
 /* -------------------- Component -------------------- */
 
 export function KPICards() {
-  const { stats, loading, error } = useOrderStats();
+  const { orders, loading, error } = useLiveOrders();
+
+  const stats = useMemo(() => {
+    const totalOrders = orders.length;
+    const pending = orders.filter((o) => o.status === "pending").length;
+    const confirmed = orders.filter((o) => o.status === "confirmed").length;
+    const inTransit = orders.filter((o) => o.status === "in_transit").length;
+    const cancelled = orders.filter((o) => o.status === "cancelled").length;
+    const totalRevenue = orders
+      .filter((o) => o.status === "delivered")
+      .reduce((sum, o) => sum + (o.amount ?? 0), 0);
+
+    return {
+      totalRevenue,
+      totalOrders,
+      pending,
+      confirmed,
+      inTransit,
+      cancelled,
+    };
+  }, [orders]);
 
   if (loading) {
     return (
@@ -33,7 +54,7 @@ export function KPICards() {
     );
   }
 
-  if (error || !stats) {
+  if (error) {
     return (
       <Card>
         <CardContent className="p-6 text-center text-sm text-red-600">
