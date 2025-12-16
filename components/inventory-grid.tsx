@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { AlertCircle, AlertTriangle } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useMemo, useState } from "react";
 import type { InventoryProduct } from "@/app/Dashboard/interfaces/interface-Product";
 import { useInventoryProducts } from "@/app/Dashboard/hooks/useInventoryProducts";
 
@@ -32,64 +32,52 @@ export function InventoryGrid({ searchQuery, reloadKey }: InventoryGridProps) {
     reloadKey,
   });
 
-  const [products, setProducts] = useState<InventoryProduct[]>([]);
   const [showDuplicateAlert, setShowDuplicateAlert] = useState(true);
 
-  useEffect(() => {
-    setProducts(fetchedProducts);
+  // 🔹 Productos normalizados (sin useEffect)
+  const products = useMemo<InventoryProduct[]>(() => {
+    return fetchedProducts.map((p) => ({
+      ...p,
+      name: p.name ?? "",
+      barcode: p.barcode ?? "",
+      category: p.category,
+      unitType: p.unitType ?? "Unit/Pcs",
+      stock: p.stock,
+      price: p.price ?? 0,
+      active: p.active ?? true,
+      isDuplicate: p.isDuplicate ?? false,
+    }));
   }, [fetchedProducts]);
 
   const duplicateProducts = products.filter((p) => p.isDuplicate);
 
-  const handleNameChange = (id: string, value: string) => {
-    setProducts(products.map((p) => (p.id === id ? { ...p, name: value } : p)));
-  };
-
-  const handleUnitTypeChange = (id: string, value: string) => {
-    setProducts(
-      products.map((p) => (p.id === id ? { ...p, unitType: value } : p))
+  if (loading) {
+    return (
+      <Alert>
+        <AlertDescription>Loading products...</AlertDescription>
+      </Alert>
     );
-  };
+  }
 
-  const handleStockChange = (id: string, value: string) => {
-    const numValue = Number.parseInt(value) || 0;
-    setProducts(
-      products.map((p) => (p.id === id ? { ...p, stock: numValue } : p))
+  if (error) {
+    return (
+      <Alert variant="destructive">
+        <AlertDescription>{error}</AlertDescription>
+      </Alert>
     );
-  };
+  }
 
-  const handlePriceChange = (id: string, value: string) => {
-    const numValue = Number.parseFloat(value) || 0;
-    setProducts(
-      products.map((p) => (p.id === id ? { ...p, price: numValue } : p))
+  if (products.length === 0) {
+    return (
+      <Alert>
+        <AlertDescription>No products found</AlertDescription>
+      </Alert>
     );
-  };
-
-  const handleActiveToggle = (id: string, checked: boolean) => {
-    setProducts(
-      products.map((p) => (p.id === id ? { ...p, active: checked } : p))
-    );
-  };
-
-  const handleMergeDuplicates = () => {
-    setShowDuplicateAlert(false);
-    setProducts(products.filter((p) => !p.isDuplicate));
-  };
+  }
 
   return (
     <div className="space-y-4">
-      {loading && (
-        <Alert className="bg-slate-50 border-slate-200">
-          <AlertDescription>Loading products...</AlertDescription>
-        </Alert>
-      )}
-
-      {error && !loading && (
-        <Alert variant="destructive">
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
-      )}
-
+      {/* Duplicates warning */}
       {showDuplicateAlert && duplicateProducts.length > 0 && (
         <Alert className="bg-amber-50 border-amber-200">
           <AlertTriangle className="h-5 w-5 text-amber-600" />
@@ -98,129 +86,119 @@ export function InventoryGrid({ searchQuery, reloadKey }: InventoryGridProps) {
               Duplicate products detected
             </span>
             <Button
-              onClick={handleMergeDuplicates}
               size="sm"
-              className="bg-amber-600 hover:bg-amber-700 ml-4"
+              onClick={() => setShowDuplicateAlert(false)}
+              className="bg-amber-600 hover:bg-amber-700"
             >
-              Merge Items
+              Dismiss
             </Button>
           </AlertDescription>
         </Alert>
       )}
 
-      <div className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b border-slate-200 bg-slate-50">
-                <th className="px-4 py-3 text-left text-xs font-semibold text-slate-700">
-                  Product Name
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-slate-700">
-                  Barcode
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-slate-700">
-                  Category
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-slate-700">
-                  Unit
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-slate-700">
-                  Stock
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-slate-700">
-                  Price
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-slate-700">
-                  Status
-                </th>
+      {/* Table */}
+      <div className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-x-auto">
+        <table className="w-full">
+          <thead>
+            <tr className="bg-slate-50 border-b">
+              <th className="px-4 py-3 text-left text-xs font-semibold">
+                Product
+              </th>
+              <th className="px-4 py-3 text-left text-xs font-semibold">
+                Barcode
+              </th>
+              <th className="px-4 py-3 text-left text-xs font-semibold">
+                Category
+              </th>
+              <th className="px-4 py-3 text-left text-xs font-semibold">
+                Unit
+              </th>
+              <th className="px-4 py-3 text-left text-xs font-semibold">
+                Stock
+              </th>
+              <th className="px-4 py-3 text-left text-xs font-semibold">
+                Price
+              </th>
+              <th className="px-4 py-3 text-left text-xs font-semibold">
+                Status
+              </th>
+            </tr>
+          </thead>
+
+          <tbody className="divide-y">
+            {products.map((product) => (
+              <tr
+                key={product.id}
+                className={product.isDuplicate ? "bg-amber-50/30" : ""}
+              >
+                {/* Name */}
+                <td className="px-4 py-3">
+                  <div className="flex items-center gap-2">
+                    <Input value={product.name} readOnly />
+                    {product.isDuplicate && (
+                      <AlertCircle className="w-4 h-4 text-amber-600" />
+                    )}
+                  </div>
+                </td>
+
+                {/* Barcode */}
+                <td className="px-4 py-3 font-mono text-sm">
+                  {product.barcode}
+                </td>
+
+                {/* Category */}
+                <td className="px-4 py-3">
+                  <Badge variant="secondary">{product.category}</Badge>
+                </td>
+
+                {/* Unit */}
+                <td className="px-4 py-3">
+                  <Select value={product.unitType} disabled>
+                    <SelectTrigger className="w-[120px] h-9">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Unit/Pcs">Unit/Pcs</SelectItem>
+                      <SelectItem value="Bulk/Kg">Bulk/Kg</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </td>
+
+                {/* Stock */}
+                <td className="px-4 py-3">
+                  <Input
+                    type="number"
+                    value={product.stock}
+                    readOnly
+                    className={
+                      product.stock < 5 ? "border-red-300 bg-red-50" : ""
+                    }
+                  />
+                </td>
+
+                {/* Price */}
+                <td className="px-4 py-3">
+                  <Input
+                    type="number"
+                    value={product.price}
+                    readOnly
+                    step="0.01"
+                  />
+                </td>
+
+                {/* Active */}
+                <td className="px-4 py-3">
+                  <div className="flex items-center gap-2">
+                    <Switch checked={product.active} disabled />
+                    <span className="text-xs">
+                      {product.active ? "Active" : "Inactive"}
+                    </span>
+                  </div>
+                </td>
               </tr>
-            </thead>
-
-            <tbody className="divide-y divide-slate-200">
-              {products.map((product) => (
-                <tr key={product.id} className="hover:bg-slate-50">
-                  <td className="px-4 py-3">
-                    <div className="flex items-center gap-2">
-                      <Input
-                        value={product.name}
-                        onChange={(e) =>
-                          handleNameChange(product.id, e.target.value)
-                        }
-                        className="h-9"
-                      />
-                      {product.isDuplicate && (
-                        <AlertCircle className="w-4 h-4 text-amber-600" />
-                      )}
-                    </div>
-                  </td>
-
-                  <td className="px-4 py-3">
-                    <code className="text-xs bg-slate-100 px-2 py-1 rounded">
-                      {product.barcode}
-                    </code>
-                  </td>
-
-                  <td className="px-4 py-3">
-                    <Badge variant="secondary">{product.category}</Badge>
-                  </td>
-
-                  <td className="px-4 py-3">
-                    <Select
-                      value={product.unitType}
-                      onValueChange={(v) => handleUnitTypeChange(product.id, v)}
-                    >
-                      <SelectTrigger className="h-9 w-[120px]">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Unit/Pcs">Unit</SelectItem>
-                        <SelectItem value="Bulk/Kg">Kg</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </td>
-
-                  <td className="px-4 py-3">
-                    <Input
-                      type="number"
-                      value={product.stock}
-                      onChange={(e) =>
-                        handleStockChange(product.id, e.target.value)
-                      }
-                      className="h-9 w-24"
-                    />
-                  </td>
-
-                  <td className="px-4 py-3">
-                    <Input
-                      type="number"
-                      step="0.01"
-                      value={product.price}
-                      onChange={(e) =>
-                        handlePriceChange(product.id, e.target.value)
-                      }
-                      className="h-9 w-24"
-                    />
-                  </td>
-
-                  <td className="px-4 py-3">
-                    <div className="flex items-center gap-2">
-                      <Switch
-                        checked={product.active}
-                        onCheckedChange={(v) =>
-                          handleActiveToggle(product.id, v)
-                        }
-                      />
-                      <span className="text-xs">
-                        {product.active ? "Active" : "Inactive"}
-                      </span>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+            ))}
+          </tbody>
+        </table>
       </div>
     </div>
   );

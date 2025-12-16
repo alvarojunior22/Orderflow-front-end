@@ -1,14 +1,12 @@
-import { OrderStatus } from "@/app/Dashboard/interfaces/interface-Order";
+// components/ui/order-status.adapter.ts
 import { ApiOrderStatus } from "@/app/api/types/api-order";
+import type { OrderStatus } from "@/app/Dashboard/interfaces/interface-Order";
 
-/**
- * Estados permitidos a enviar al backend
- * según el estado actual de la UI
- */
 export const UI_TO_API_STATUS: Record<OrderStatus, ApiOrderStatus[]> = {
-  awaiting: ["confirmed"],
-  processing: ["preparing", "in_transit"],
-  ready: ["delivered"],
-  completed: [],
+  pending: ["confirmed", "cancelled"],
+  confirmed: ["preparing"],
+  preparing: ["in_transit"],
+  in_transit: ["delivered"],
+  delivered: [],
   cancelled: [],
 };

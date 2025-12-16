@@ -15,59 +15,59 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { DateRange } from "react-day-picker";
 import { format } from "date-fns";
 
-// Tipado del filtro
-interface StatusFilter {
+/* -------------------- Types -------------------- */
+
+export interface StatusFilter {
   status: string;
   dateRange: DateRange | undefined;
 }
 
-// Tipado del componente (prop)
 interface OrdersHeaderProps {
-  onFilter: (filter: StatusFilter) => void;
+  onFilter?: (filter: StatusFilter) => void;
 }
+
+/* -------------------- Config -------------------- */
 
 const statusFilters = [
   { value: "all", label: "All Statuses" },
   { value: "pending", label: "Pending" },
-  { value: "processing", label: "Processing" },
-  { value: "ready", label: "Ready" },
-  { value: "completed", label: "Completed" },
+  { value: "confirmed", label: "Confirmed" },
+  { value: "preparing", label: "Preparing" },
+  { value: "in_transit", label: "In transit" },
+  { value: "delivered", label: "Delivered" },
+  { value: "cancelled", label: "Cancelled" },
 ];
 
+/* -------------------- Component -------------------- */
+
 export function OrdersHeader({ onFilter }: OrdersHeaderProps) {
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>({
+  const [filter, setFilter] = useState<StatusFilter>({
     status: "all",
     dateRange: undefined,
   });
 
-  const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
-
-  // Cambiar estado seleccionado
   const handleStatusChange = (value: string) => {
     const updated: StatusFilter = {
-      ...statusFilter,
+      ...filter,
       status: value,
     };
 
-    setStatusFilter(updated);
-    onFilter(updated);
+    setFilter(updated);
+    onFilter?.(updated); // ✅ protegido
   };
 
-  // Cambiar rango de fechas
   const handleDateChange = (range: DateRange | undefined) => {
     const updated: StatusFilter = {
-      ...statusFilter,
+      ...filter,
       dateRange: range,
     };
 
-    setDateRange(range);
-    setStatusFilter(updated);
-    onFilter(updated);
+    setFilter(updated);
+    onFilter?.(updated); // ✅ protegido
   };
 
   return (
@@ -85,36 +85,39 @@ export function OrdersHeader({ onFilter }: OrdersHeaderProps) {
       {/* Filters */}
       <div className="flex flex-wrap items-center gap-3">
         {/* Status Filter */}
-        <Select value={statusFilter.status} onValueChange={handleStatusChange}>
-          <SelectTrigger className="w-[180px] bg-white">
+        <Select value={filter.status} onValueChange={handleStatusChange}>
+          <SelectTrigger className="w-[200px] bg-white">
             <Filter className="w-4 h-4 mr-2 text-slate-500" />
             <SelectValue placeholder="Status" />
           </SelectTrigger>
           <SelectContent>
-            {statusFilters.map((filter) => (
-              <SelectItem key={filter.value} value={filter.value}>
-                {filter.label}
+            {statusFilters.map((item) => (
+              <SelectItem key={item.value} value={item.value}>
+                {item.label}
               </SelectItem>
             ))}
           </SelectContent>
         </Select>
 
-        {/* Date Range Picker */}
+        {/* Date Range */}
         <Popover>
           <PopoverTrigger asChild>
-            <Button variant="outline" className="w-60 justify-start bg-white">
+            <Button
+              variant="outline"
+              className="w-64 justify-start bg-white text-left font-normal"
+            >
               <Calendar className="w-4 h-4 mr-2 text-slate-500" />
-              {dateRange?.from ? (
-                dateRange.to ? (
+              {filter.dateRange?.from ? (
+                filter.dateRange.to ? (
                   <>
-                    {format(dateRange.from, "LLL dd")} -{" "}
-                    {format(dateRange.to, "LLL dd, y")}
+                    {format(filter.dateRange.from, "LLL dd")} –{" "}
+                    {format(filter.dateRange.to, "LLL dd, y")}
                   </>
                 ) : (
-                  format(dateRange.from, "LLL dd, y")
+                  format(filter.dateRange.from, "LLL dd, y")
                 )
               ) : (
-                <span>Date Range</span>
+                <span>Date range</span>
               )}
             </Button>
           </PopoverTrigger>
@@ -122,14 +125,14 @@ export function OrdersHeader({ onFilter }: OrdersHeaderProps) {
           <PopoverContent className="w-auto p-0" align="start">
             <CalendarComponent
               mode="range"
-              selected={dateRange}
+              selected={filter.dateRange}
               onSelect={handleDateChange}
               numberOfMonths={2}
             />
           </PopoverContent>
         </Popover>
 
-        {/* Export CSV */}
+        {/* Export */}
         <Button className="ml-auto bg-blue-600 hover:bg-blue-700 text-white">
           <Download className="w-4 h-4 mr-2" />
           Export CSV

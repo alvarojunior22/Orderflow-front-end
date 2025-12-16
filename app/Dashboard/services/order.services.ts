@@ -1,7 +1,8 @@
+// app/Dashboard/services/order.services.ts
 import { ApiOrderStatus } from "@/app/api/types/api-order";
 import { authFetch } from "@/lib/authFetch";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL!;
+const API_URL = process.env.NEXT_PUBLIC_API_URL as string;
 
 export async function updateOrderStatus(
   orderId: string,
@@ -16,7 +17,9 @@ export async function updateOrderStatus(
   });
 
   if (!res.ok) {
-    throw new Error("Failed to update order status");
+    const body = await res.text();
+    console.error("Update order status failed:", body);
+    throw new Error(body || "Failed to update order status");
   }
 
   return res.json();

@@ -1,8 +1,9 @@
 export type OrderStatus =
-  | "processing"
-  | "awaiting"
-  | "ready"
-  | "completed"
+  | "pending"
+  | "confirmed"
+  | "preparing"
+  | "in_transit"
+  | "delivered"
   | "cancelled";
 
 export interface Order {

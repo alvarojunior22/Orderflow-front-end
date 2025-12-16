@@ -28,7 +28,10 @@ export default function InventoryPage() {
           onSearchChange={setSearchQuery}
           onProductCreated={handleProductCreated}
         />
-        <InventoryGrid searchQuery={searchQuery} reloadKey={reloadKey} />
+        <InventoryGrid
+          searchQuery={searchQuery}
+          reloadKey={reloadKey}
+        />
       </div>
     </DashboardLayout>
   )

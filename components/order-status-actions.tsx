@@ -1,11 +1,12 @@
+// components/order-status-actions.tsx
 "use client";
 
-import { ApiOrderStatus } from "@/app/api/types/api-order";
-import { Order } from "@/app/Dashboard/interfaces/interface-Order";
-import { updateOrderStatus } from "@/app/Dashboard/services/order.services";
-import { Button } from "@/components/ui/button";
 import { useState } from "react";
-import { UI_TO_API_STATUS } from "./ui/order-status.adapter";
+import { Button } from "@/components/ui/button";
+import { updateOrderStatus } from "@/app/Dashboard/services/order.services";
+import { UI_TO_API_STATUS } from "@/components/ui/order-status.adapter";
+import type { Order } from "@/app/Dashboard/interfaces/interface-Order";
+import type { ApiOrderStatus } from "@/app/api/types/api-order";
 
 interface Props {
   order: Order;
@@ -14,7 +15,7 @@ interface Props {
 export function OrderStatusActions({ order }: Props) {
   const [loading, setLoading] = useState(false);
 
-  const nextStatuses = UI_TO_API_STATUS[order.status];
+  const nextStatuses = UI_TO_API_STATUS[order.status] ?? [];
 
   if (nextStatuses.length === 0) return null;
 
