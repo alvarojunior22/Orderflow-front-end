@@ -1,36 +1,120 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# OrderFlow Front-End
+
+OrderFlow is a Next.js dashboard for managing orders, inventory and basic analytics.
+This repository contains the **front-end** application.
+
+## Tech Stack
+
+- **Next.js** (App Router)
+- **React**
+- **TypeScript**
+- **Tailwind CSS**
+- **shadcn/ui (Radix UI)**
+- **Recharts** (charts)
+
+## Features
+
+- **Authentication** (login/register) + token refresh
+- **Dashboard** KPIs and live orders feed
+- **Orders** list + status actions
+- **Notifications** (toast + notification center)
+- **Inventory catalog** (products list + create product)
+- **Analytics** pages (charts/tables)
 
 ## Getting Started
 
-First, run the development server:
+### 1) Install dependencies
+
+```bash
+npm install
+```
+
+### 2) Configure environment variables
+
+Create a `.env` file (or use your existing one) and set:
+
+```bash
+NEXT_PUBLIC_API_URL=https://your-api-host
+```
+
+Notes:
+
+- `NEXT_PUBLIC_API_URL` must point to the backend base URL.
+- The app uses `localStorage` tokens (`accessToken`, `refreshToken`) and sends `Authorization: Bearer <token>`.
+
+### 3) Run the dev server
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Then open:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- http://localhost:3000
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## NPM Scripts
 
-## Learn More
+- **dev**: `next dev`
+- **build**: `next build`
+- **start**: `next start`
+- **lint**: `eslint`
 
-To learn more about Next.js, take a look at the following resources:
+## Project Structure
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+High-level overview of the main folders:
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```
+app/
+  layout.tsx              # Root layout (AuthProvider + Toaster)
+  page.tsx                # Landing page
+  login/                  # Login route
+  register/               # Register route
+  context/                # Auth context
+  Dashboard/              # Dashboard module (domain + services + hooks + views)
+  api/                    # Next.js route handlers (mock/dev helpers) + shared API types
 
-## Deploy on Vercel
+components/
+  ui/                     # shadcn/ui components (Toast, Dialog, etc.)
+  *.tsx                   # Feature components (KPIs, orders table, charts...)
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+lib/
+  authFetch.ts            # Auth-aware fetch + token refresh
+  utils.ts                # Small shared utilities
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+data/
+  dataOrder.ts            # Mock orders used by some local API routes
+```
+
+### Dashboard module (`app/Dashboard`)
+
+```
+app/Dashboard/
+  views/                  # Route pages (inventory, orders, analytics, settings)
+  services/               # HTTP calls to backend (products, orders...)
+  hooks/                  # React hooks (live orders polling, notifications, etc.)
+  adapters/               # Data mappers (API -> UI models)
+  interfaces/             # Shared TypeScript interfaces
+  layout/                 # Dashboard layout (sidebar/topbar)
+  domain/                 # Pure domain logic (metrics calculations)
+```
+
+## Troubleshooting
+
+### "Not authenticated" / 401
+
+- Ensure you logged in and `accessToken` exists in `localStorage`.
+- Check `NEXT_PUBLIC_API_URL` points to the correct backend.
+
+### Notifications do not appear
+
+- The app uses the shadcn/ui toaster.
+- Verify `Toaster` is mounted in `app/layout.tsx`.
+
+### Orders/KPIs show 0
+
+- Some KPIs are computed from the live orders feed.
+- Verify your backend endpoints return orders for the selected `storeId`.
+
+## License
+
+Private project.
