@@ -34,7 +34,7 @@ export async function POST(req: Request) {
       customer: body.customer,
       amount: Number(body.amount),
       channel: body.channel, // "telegram"
-      status: "awaiting",
+      status: "pending",
       createdAt: new Date(),
       updatedAt: new Date(),
     };

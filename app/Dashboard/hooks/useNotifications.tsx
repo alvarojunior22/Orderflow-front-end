@@ -1,13 +1,22 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Notification } from "../interfaces/interface-Notifications";
-import { getStoreNotifications } from "@/app/api/notifications/notificationsStore";
+import {
+  getStoreNotifications,
+  markAllStoreNotificationsRead,
+  subscribeStoreNotifications,
+  updateStoreNotification,
+} from "@/app/api/notifications/notificationsStore";
 
 export function useNotifications() {
   const [notifications, setNotifications] = useState<Notification[]>(() =>
     getStoreNotifications()
   );
+
+  useEffect(() => {
+    return subscribeStoreNotifications(setNotifications);
+  }, []);
 
   const unreadCount = useMemo(
     () => notifications.filter((n) => n.unread).length,
@@ -15,13 +24,11 @@ export function useNotifications() {
   );
 
   const markAsRead = useCallback((id: string) => {
-    setNotifications((prev) =>
-      prev.map((n) => (n.id === id ? { ...n, unread: false } : n))
-    );
+    updateStoreNotification(id, false);
   }, []);
 
   const markAllRead = useCallback(() => {
-    setNotifications((prev) => prev.map((n) => ({ ...n, unread: false })));
+    markAllStoreNotificationsRead();
   }, []);
 
   return {

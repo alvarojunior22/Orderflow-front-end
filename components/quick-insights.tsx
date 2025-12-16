@@ -1,35 +1,73 @@
+"use client"
+
+import { useEffect, useMemo, useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Wifi } from "lucide-react"
+import { useAuth } from "@/app/context/authcontext"
+import { listProducts } from "@/app/Dashboard/services/product.services"
+import { adaptApiProduct } from "@/app/Dashboard/adapters/product.adapter"
 
-const topItems = [
-  {
-    name: "Premium Coffee Beans",
-    quantity: 24,
-    image: "/coffee-beans.jpg",
-  },
-  {
-    name: "Organic Green Tea",
-    quantity: 18,
-    image: "/green-tea.jpg",
-  },
-  {
-    name: "Artisan Chocolate Bar",
-    quantity: 15,
-    image: "/chocolate-bar.jpg",
-  },
-  {
-    name: "Fresh Pastries",
-    quantity: 12,
-    image: "/assorted-pastries.png",
-  },
-  {
-    name: "Specialty Smoothie Mix",
-    quantity: 10,
-    image: "/colorful-fruit-smoothie.png",
-  },
-]
+type TopItem = {
+  name: string
+  quantity: number
+  image: string
+}
 
 export function QuickInsights() {
+  const { storeId } = useAuth()
+  const [items, setItems] = useState<TopItem[]>([])
+  const [loading, setLoading] = useState<boolean>(true)
+
+  useEffect(() => {
+    let isActive = true
+
+    const load = async () => {
+      if (!storeId) {
+        if (isActive) {
+          setItems([])
+          setLoading(false)
+        }
+        return
+      }
+
+      try {
+        setLoading(true)
+        const res = await listProducts({ storeId, limit: 50, offset: 0 })
+        if (!isActive) return
+
+        const products = res.data.map(adaptApiProduct)
+        const top = products
+          .slice()
+          .sort((a, b) => (b.stock ?? 0) - (a.stock ?? 0))
+          .slice(0, 5)
+          .map<TopItem>((p) => ({
+            name: p.name,
+            quantity: p.stock,
+            image: p.image,
+          }))
+
+        setItems(top)
+      } catch (err) {
+        console.error("Failed to load top items:", err)
+        if (isActive) {
+          setItems([])
+        }
+      } finally {
+        if (isActive) {
+          setLoading(false)
+        }
+      }
+    }
+
+    void load()
+
+    return () => {
+      isActive = false
+    }
+  }, [storeId])
+
+  const topItems = useMemo(() => items, [items])
+
   return (
     <div className="space-y-4">
       {/* Top Selling Items */}
@@ -39,14 +77,17 @@ export function QuickInsights() {
         </CardHeader>
         <CardContent className="p-4">
           <div className="space-y-3">
+            {loading && (
+              <p className="text-sm text-slate-500">Loading...</p>
+            )}
+            {!loading && topItems.length === 0 && (
+              <p className="text-sm text-slate-500">No products</p>
+            )}
             {topItems.map((item, index) => (
               <div key={item.name} className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-lg bg-slate-100 flex items-center justify-center shrink-0 overflow-hidden">
-                  <img src={item.image || "/placeholder.svg"} alt={item.name} className="w-full h-full object-cover" />
-                </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-slate-900 truncate">{item.name}</p>
-                  <p className="text-xs text-slate-500">Sold: {item.quantity}</p>
+                  <p className="text-xs text-slate-500">Stock: {item.quantity}</p>
                 </div>
                 <div className="text-lg font-bold text-slate-900">#{index + 1}</div>
               </div>

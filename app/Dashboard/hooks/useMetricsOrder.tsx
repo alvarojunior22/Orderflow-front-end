@@ -8,21 +8,19 @@ export function useOrderMetrics(orders: Order[]) {
 
   const completedToday = orders.filter(
     (o) =>
-      o.status === "completed" &&
+      o.status === "delivered" &&
       new Date(o.updatedAt).setHours(0, 0, 0, 0) === today.getTime()
   );
 
   const revenueToday = completedToday.reduce((sum, o) => sum + o.amount, 0);
 
   const activeOrders = orders.filter((o) =>
-    ["awaiting", "pending", "processing"].includes(o.status)
+    ["pending", "confirmed", "preparing", "in_transit"].includes(o.status)
   );
 
   const newOrdersToday = orders.filter((o) => new Date(o.createdAt) >= today);
 
-  const alertOrders = orders.filter((o) =>
-    ["cancelled", "failed"].includes(o.status)
-  );
+  const alertOrders = orders.filter((o) => ["cancelled"].includes(o.status));
 
   return {
     revenueToday,

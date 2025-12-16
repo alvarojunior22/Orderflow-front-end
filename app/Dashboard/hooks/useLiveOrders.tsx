@@ -6,6 +6,8 @@ import { ApiOrdersResponse } from "@/app/api/types/api-order";
 import { adaptApiOrder } from "../adapters/order.adapter";
 import { useAuth } from "@/app/context/authcontext";
 import { authFetch } from "@/lib/authFetch";
+import { toast } from "@/components/ui/use-toast";
+import { syncNotificationsFromOrders } from "@/app/api/notifications/notificationsStore";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL as string;
 
@@ -18,6 +20,8 @@ export function useLiveOrders(pollingMs = 5000) {
   const [hasNewOrders, setHasNewOrders] = useState(false);
 
   const knownIds = useRef<Set<string>>(new Set());
+  const initialized = useRef(false);
+  const statusById = useRef<Map<string, Order["status"]>>(new Map());
 
   const fetchOrders = useCallback(async () => {
     if (!storeId) {
@@ -39,10 +43,41 @@ export function useLiveOrders(pollingMs = 5000) {
       const json: ApiOrdersResponse = await res.json();
       const normalized = json.data.map(adaptApiOrder);
 
-      const hasNew = normalized.some((o) => !knownIds.current.has(o.id));
-      normalized.forEach((o) => knownIds.current.add(o.id));
+      let hasNew = false;
 
-      if (hasNew) setHasNewOrders(true);
+      for (const order of normalized) {
+        const isKnown = knownIds.current.has(order.id);
+        const prevStatus = statusById.current.get(order.id);
+
+        if (initialized.current) {
+          if (!isKnown) {
+            hasNew = true;
+            toast({
+              title: "New order",
+              description: `Order ${order.id} · ${order.status}`,
+            });
+          } else if (prevStatus && prevStatus !== order.status) {
+            toast({
+              title: "Order status updated",
+              description: `Order ${order.id}: ${prevStatus} → ${order.status}`,
+            });
+          }
+        }
+
+        knownIds.current.add(order.id);
+        statusById.current.set(order.id, order.status);
+      }
+
+      if (!initialized.current) {
+        initialized.current = true;
+      } else {
+        syncNotificationsFromOrders(normalized);
+      }
+
+      if (hasNew) {
+        setHasNewOrders(true);
+        window.setTimeout(() => setHasNewOrders(false), 3000);
+      }
 
       setOrders(normalized);
       setError(null);
@@ -55,6 +90,11 @@ export function useLiveOrders(pollingMs = 5000) {
   }, [storeId]);
 
   useEffect(() => {
+    knownIds.current = new Set();
+    statusById.current = new Map();
+    initialized.current = false;
+    setHasNewOrders(false);
+
     fetchOrders();
     const interval = setInterval(fetchOrders, pollingMs);
     return () => clearInterval(interval);

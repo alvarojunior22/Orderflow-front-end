@@ -30,9 +30,9 @@ function generateNotifications(orders: Order[]): Notification[] {
       });
     }
 
-    return notifications
-      .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())
-      .slice(0, 5);
+    return notifications.sort(
+      (a, b) => b.timestamp.getTime() - a.timestamp.getTime()
+    );
   }
 
 
@@ -68,8 +68,44 @@ function formatTimeAgo(date: Date): string {
 
 let storeNotifications: Notification[] = [];
 
+const MAX_NOTIFICATIONS = 50;
+
+const listeners: Array<(notifications: Notification[]) => void> = [];
+
+function notify() {
+  const snapshot = storeNotifications.slice();
+  for (const listener of listeners) {
+    listener(snapshot);
+  }
+}
+
+export const subscribeStoreNotifications = (
+  listener: (notifications: Notification[]) => void
+) => {
+  listeners.push(listener);
+  listener(storeNotifications.slice());
+
+  return () => {
+    const idx = listeners.indexOf(listener);
+    if (idx >= 0) listeners.splice(idx, 1);
+  };
+};
+
 export const syncNotificationsFromOrders = (orders: Order[]) => {
-  storeNotifications = generateNotifications(orders);
+  const newOnes = generateNotifications(orders);
+
+  if (newOnes.length === 0) {
+    return;
+  }
+
+  const known = new Set(storeNotifications.map((n) => n.id));
+  const merged = [...newOnes.filter((n) => !known.has(n.id)), ...storeNotifications];
+
+  storeNotifications = merged
+    .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())
+    .slice(0, MAX_NOTIFICATIONS);
+
+  notify();
 };
 
 export const getStoreNotifications = (): Notification[] => {
@@ -80,6 +116,7 @@ export const updateStoreNotification = (id: string, unread: boolean) => {
   storeNotifications = storeNotifications.map((n) =>
     n.id === id ? { ...n, unread } : n
   );
+  notify();
 };
 
 export const markAllStoreNotificationsRead = () => {
@@ -87,4 +124,5 @@ export const markAllStoreNotificationsRead = () => {
     ...n,
     unread: false,
   }));
+  notify();
 };

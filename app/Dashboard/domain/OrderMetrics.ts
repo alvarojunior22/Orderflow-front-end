@@ -40,18 +40,19 @@ export function calculateDashboardMetrics(
         : new Date(order.updatedAt);
 
     if (
-      order.status === "awaiting" ||
-      order.status === "processing" ||
-      order.status === "ready"
+      order.status === "pending" ||
+      order.status === "confirmed" ||
+      order.status === "preparing" ||
+      order.status === "in_transit"
     ) {
       activeOrders++;
     }
 
-    if (order.status === "awaiting") {
+    if (order.status === "pending") {
       pendingOrders++;
     }
 
-    if (order.status === "completed" && isSameDay(updatedAt, today)) {
+    if (order.status === "delivered" && isSameDay(updatedAt, today)) {
       completedToday++;
       revenueToday += order.amount;
     }
